@@ -34,14 +34,9 @@ class URLMask
 
      # STDERR.puts "#{mask} vs #{url}:"
 
-      return false unless fuzzy_match(mask_parts[:protocol],
-                                      url_parts[:protocol] || 'http')
+      return false unless compare_protocols_and_ports(mask_parts, url_parts)
 
       debug("matched protocol")
-
-      return false unless fuzzy_match(mask_parts[:port],
-                                      url_parts[:port] || 80)
-
       debug("matched port")
       return false unless fuzzy_match(mask_parts[:username],
                                       url_parts[:username])
@@ -72,6 +67,23 @@ class URLMask
       true
     end
 
+
+    def compare_protocols_and_ports(mask_parts, url_parts)
+      mask_protocol = mask_parts[:protocol] || 'http'
+      url_protocol = url_parts[:protocol] || 'http'
+      if mask_parts[:protocol]
+        return false if mask_protocol != '*' && mask_protocol != url_protocol
+      end
+
+      mask_port = mask_parts[:port]
+      url_port = url_parts[:port] || PORT_BY_PROTOCOL[url_protocol]
+      if mask_parts[:port]
+        return false if mask_port != '*' && mask_port != url_port
+      end
+
+      true
+    end
+
     def fuzzy_match(mask, piece)
       if mask
         if mask != piece && mask != '*'
@@ -92,21 +104,17 @@ class URLMask
     end
 
     def compare_pieces(mask, pieces)
-      #return false if mask.count > pieces.count
-      pieces.each_with_index do |piece, i|
-#        puts "piece #{i}: #{mask[i].inspect} vs #{piece.inspect}"
-        return true if mask[i] == '*'
+      i = 0
+      pieces.each do |piece|
+        #puts "piece #{i}: #{mask[i].inspect} vs #{piece.inspect}"
+        return true if piece && mask[i] == '*'
         return false if mask[i] != piece
+        i += 1
       end
+      #return false if mask[i]
       true
     end
 
-
-    ## Given a URL (like `'https://example.com/some/path?args=1`),
-    ## returns a hash containing protocol (like `'https'`), hostname (like
-    ## `'example.com'`), port (like `443`), path (like `'/some/path?args=1'`),
-    ## and split_path (like `['some', 'path?args=1']).
-    ## Returns nil when a URL match is impossible.
     def decompose_url(url)
       if m = url.match(%r{
             ^
@@ -136,9 +144,10 @@ class URLMask
         password = m[3]
         hostname = m[4] ? m[4].downcase : nil
 
-        if !(port = m[5]) && PORT_BY_PROTOCOL.has_key?(protocol)
-          port = PORT_BY_PROTOCOL[protocol]
-        end
+        #if !(port = m[5]) && PORT_BY_PROTOCOL.has_key?(protocol)
+          #port = PORT_BY_PROTOCOL[protocol]
+        #end
+        port = m[5] ? m[5].to_i : nil
         port = port.to_i if port
 
         path = m[6]

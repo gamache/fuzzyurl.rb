@@ -14,6 +14,7 @@ MATCHES = <<-EOT.split(/\s+/)
   http://*  http://example.com
   http://*  example.com
   http://*  http://example.com:80
+  http://*  http://example.com:8080
   http://*  http://example.com/some/path?args=1
 
   example.com         example.com
@@ -25,8 +26,21 @@ MATCHES = <<-EOT.split(/\s+/)
   example.com         http://example.com
 
   http://example.com  example.com
-  http://example.com  example.com
-  http://example.com  example.com
+  http://example.com  example.com/a/b/c
+  http://example.com  example.com:80/a/b/c
+
+  http://*.example.com  api.example.com
+
+EOT
+
+NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
+
+  http://*  https://example.com
+  https://* http://example.com
+
+  http://example.com   http://www.example.com
+
+  *.example.com  example.com
 
 EOT
 
@@ -37,14 +51,17 @@ describe URLMask do
       while i < MATCHES.count-1
         mask = MATCHES[i+=1]
         url = MATCHES[i+=1]
-        #puts "#{mask} VS! #{url}"
         URLMask.compare(mask, url).must_equal true, "#{mask} vs #{url}"
       end
-
     end
 
     it 'handles negative matches' do
-
+      i = 0
+      while i < NEGATIVE_MATCHES.count-1
+        mask = NEGATIVE_MATCHES[i+=1]
+        url = NEGATIVE_MATCHES[i+=1]
+        URLMask.compare(mask, url).must_equal false, "#{mask} vs #{url}"
+      end
     end
   end
 
@@ -84,7 +101,7 @@ describe URLMask do
       d[:username].must_be_nil
       d[:password].must_be_nil
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 80
+      d[:port].must_be_nil
       d[:path].must_be_nil
       d[:query].must_be_nil
       d[:fragment].must_be_nil
@@ -96,7 +113,7 @@ describe URLMask do
       d[:username].must_be_nil
       d[:password].must_be_nil
       d[:hostname].must_equal '*'
-      d[:port].must_equal 80
+      d[:port].must_be_nil
       d[:path].must_be_nil
       d[:query].must_be_nil
       d[:fragment].must_be_nil
@@ -122,7 +139,7 @@ describe URLMask do
       d[:username].must_be_nil
       d[:password].must_be_nil
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 443
+      d[:port].must_be_nil
       d[:path].must_equal '/'
       d[:query].must_be_nil
       d[:fragment].must_be_nil
@@ -148,7 +165,7 @@ describe URLMask do
       d[:username].must_equal 'user'
       d[:password].must_equal 'pass'
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 80
+      d[:port].must_be_nil
       d[:path].must_be_nil
       d[:query].must_be_nil
       d[:fragment].must_be_nil
@@ -161,7 +178,7 @@ describe URLMask do
       d[:username].must_equal 'user'
       d[:password].must_equal ''
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 80
+      d[:port].must_be_nil
       d[:path].must_be_nil
       d[:query].must_be_nil
       d[:fragment].must_be_nil
@@ -174,7 +191,7 @@ describe URLMask do
       d[:username].must_be_nil
       d[:password].must_be_nil
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 80
+      d[:port].must_be_nil
       d[:path].must_equal '/some/path'
       d[:query].must_equal 'query=true'
       d[:fragment].must_be_nil
@@ -187,7 +204,7 @@ describe URLMask do
       d[:username].must_be_nil
       d[:password].must_be_nil
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 443
+      d[:port].must_be_nil
       d[:path].must_be_nil
       d[:query].must_equal 'query=true'
       d[:fragment].must_be_nil
@@ -200,7 +217,7 @@ describe URLMask do
       d[:username].must_be_nil
       d[:password].must_be_nil
       d[:hostname].must_equal 'example.com'
-      d[:port].must_equal 80
+      d[:port].must_be_nil
       d[:path].must_equal '/PATH'
       d[:query].must_be_nil
       d[:fragment].must_equal 'frag'
