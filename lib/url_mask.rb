@@ -1,3 +1,5 @@
+require 'url_mask/version'
+
 ## URLMask is a class for representing a URL mask with wildcards, and for
 ## matching other URLs against that URL mask.  It also contains facilities
 ## for non-strict parsing of common URLs.
@@ -31,42 +33,46 @@
 ## "/a/b/*") in order to match paths like "/a/b" and "/a/b/c/d", but not
 ## "/a/bcde".
 
-class URLMask
+class URLMask < Hash
 
-  ## The mask URL string for this URLMask.
-  attr_reader :mask
-
-  ## Creates a new URLMask with the given mask URL string.
+  ## Creates a new URLMask with the given mask URL string or hash.
+  ## If hash, it should contain :protocol, :username, :password,
+  ## :hostname, :port, :path, :query, and :fragment fields (all String
+  ## or nil).
   def initialize(mask)
-    @mask = mask
+    case mask
+    when String
+      self.send(:initialize_copy, self.class.url_to_hash(mask))
+      @string = mask
+    when Hash
+      self.send(:initialize_copy, mask)
+      @string = self.class.hash_to_url(mask)
+    else
+      raise ArgumentError, "mask must be String or Hash; got #{mask.inspect}"
+    end
   end
 
-  ## Matches the given URL against this URLMask.
+  ## Matches the given URL string against this URLMask.
   ## Returns nil on negative match, and an integer match score otherwise.
   ## This match score is higher for more specific matches.
   def match(url)
-    self.class.match_decomposed(self.decompose, self.class.decompose_url(url))
+    self.class.match_hash(self.to_hash, self.class.url_to_hash(url))
   end
 
-  ## Matches the given URL against this URLMask.
+  ## Matches the given URL string against this URLMask.
   ## Returns true on positive match, false otherwise.
   def matches?(url)
     match(url) ? true : false
   end
 
-  ## Returns this URLMask's decomposed (Hash) form.
-  def decompose
-    @decomposed ||= self.class.decompose_url(self.mask)
-  end
-
-  ## Returns this URLMask's mask URL string.
-  def to_s
-    mask
-  end
-
-  ## Returns this URLMask's decomposed (Hash) form.
+  ## Returns this URLMask's hash form.
   def to_hash
-    decompose
+    Hash[self]
+  end
+
+  ## Returns this URLMask's string form.
+  def to_s
+    @string.clone
   end
 
 
@@ -82,11 +88,11 @@ class URLMask
     ## Example:
     ##
     ## ```
-    ## URLMask.decompose_url('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
+    ## URLMask.url_to_hash('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
     ## # => {:protocol=>"http", :username=>"user", :password=>"pass", :hostname=>"example.com", :port=>8080, :path=>"/some/path/", :query=>"foo=bar&baz=1", :fragment=>"url-fragment"} 
     ## ```
 
-    def decompose_url(url)
+    def url_to_hash(url)
       if m = url.match(%r{
             ^
 
@@ -137,6 +143,30 @@ class URLMask
       end
     end
 
+    ## Given a hash containing :protocol, :username, :password,
+    ## :hostname, :port, :path, :query, and :fragment fields (all String
+    ## or nil), return a URL string containing these elements.
+    def hash_to_url(hash)
+      url = ''
+      url << hash[:protocol] + '://' if hash[:protocol]
+      if hash[:username]
+        url << hash[:username]
+        url << ':' + hash[:password] if hash[:password]
+        url << '@'
+      end
+      url << hash[:hostname] if hash[:hostname]
+      url << ':' + hash[:port] if hash[:port]
+
+      ## make sure path starts with a / if it's defined
+      path = hash[:path]
+      path = '/' + path if path && path.index('/') != 0
+      url << path.to_s
+
+      url << '?'+hash[:query] if hash[:query]
+      url << '#'+hash[:fragment] if hash[:fragment]
+      url
+    end
+
     ## Matches a URL mask string with a URL string.
     ## Raises ArgumentError when given malformed URLs.
     ## Returns true on positive match, false otherwise.
@@ -149,20 +179,20 @@ class URLMask
     ## Returns nil on negative match, and an integer match score otherwise.
     ## This match score is higher for more specific matches.
     def match(mask, url)
-      unless mask_parts = decompose_url(mask)
+      unless mask_hash = url_to_hash(mask)
         raise ArgumentError, "Badly formed URL mask: #{mask.inspect}"
       end
-      unless url_parts = decompose_url(url)
+      unless url_hash = url_to_hash(url)
         raise ArgumentError, "Badly formed URL: #{url.inspect}"
       end
-      match_decomposed(mask_parts, url_parts)
+      match_hash(mask_hash, url_hash)
     end
 
 
-    ## Compares a decomposed URL mask with a decomposed URL string.
+    ## Compares a URL mask hash with a URL hash.
     ## Returns nil on negative match, and an integer match score otherwise.
     ## This match score is higher for more specific matches.
-    def match_decomposed(mask, url)
+    def match_hash(mask, url)
       score = 0
       tally = Proc.new {|x| return nil unless x; score += x}
 
@@ -175,36 +205,36 @@ class URLMask
       tally.call fuzzy_match(mask[:fragment], url[:fragment])
     end
 
-    ## Matches a decomposed URL mask against a decomposed URL.
+    ## Matches a URL mask hash against a URL hash.
     ## Returns true on positive match, false otherwise.
-    def matches_decomposed?(mask, url)
-      match_decomposed(mask, url) ? true : false
+    def matches_hash?(mask, url)
+      match_hash(mask, url) ? true : false
     end
 
   private
 
     ## Matches protocol and port information.
-    ## Returns nil for no match, 0 for a wildcard match, or 1 for an
-    ## exact match.
-    def match_protocols_and_ports(mask_parts, url_parts)
-      wildcard_match = false
-      mask_protocol = mask_parts[:protocol] || 'http'
-      url_protocol = url_parts[:protocol] || 'http'
-      if mask_parts[:protocol] && mask_protocol != '*'
+    ## Returns nil for no match, 0 if two wildcard matches were made, 1 if
+    ## one wildcard match was made, and 2 for an exact match.
+    def match_protocols_and_ports(mask_hash, url_hash)
+      wildcard_matches = 0
+      mask_protocol = mask_hash[:protocol] || 'http'
+      url_protocol = url_hash[:protocol] || 'http'
+      if mask_hash[:protocol] && mask_protocol != '*'
         return nil if mask_protocol != url_protocol
       else
-        wildcard_match = true
+        wildcard_matches += 1
       end
 
-      mask_port = mask_parts[:port]
-      url_port = url_parts[:port] || PORT_BY_PROTOCOL[url_protocol]
-      if mask_parts[:port] && mask_port != '*'
+      mask_port = mask_hash[:port]
+      url_port = url_hash[:port] || PORT_BY_PROTOCOL[url_protocol]
+      if mask_hash[:port] && mask_port != '*'
         return nil if mask_port != url_port
       else
-        wildcard_match = true
+        wildcard_matches += 1
       end
 
-      wildcard_match ? 0 : 1
+      (2 - wildcard_matches)
     end
 
     PORT_BY_PROTOCOL = {

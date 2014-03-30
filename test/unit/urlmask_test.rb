@@ -58,8 +58,8 @@ EOT
 
 describe URLMask do
   describe '.matches?' do
-    it 'passes control to .match_decomposed' do
-      URLMask.expects(:match_decomposed).returns(true)
+    it 'passes control to .match_hash' do
+      URLMask.expects(:match_hash).returns(true)
       URLMask.match('*', '*')
     end
 
@@ -82,9 +82,9 @@ describe URLMask do
     end
   end
 
-  describe '#matches' do
-    it 'passes control to .match_decomposed' do
-      URLMask.expects(:match_decomposed).returns(true)
+  describe '#matches?' do
+    it 'passes control to .match_hash' do
+      URLMask.expects(:match_hash).returns(true)
       mask = URLMask.new('*')
       mask.matches?('*')
     end
@@ -110,29 +110,49 @@ describe URLMask do
     end
   end
 
-  describe '#decompose' do
-    it 'hands off processing to .decompose_url' do
-      URLMask.expects(:decompose_url).with('test').returns({})
-      m = URLMask.new('test')
-      m.decompose
+  describe '.match' do
+    it 'scores wildcards correctly' do
+      URLMask.match('*', 'http://example.com/a/b').must_equal 0
+      URLMask.match('*://*/*', 'http://example.com/a/b').must_equal 0
     end
 
-    it 'memoizes' do
-      URLMask.expects(:decompose_url).with('test').returns({})
-      m = URLMask.new('test')
-      m.decompose
-      m.decompose
+    it 'scores exact matches correctly' do
+      URLMask.match('example.com', 'http://example.com/a/b').must_equal 1
+      URLMask.match('http://example.com', 'http://example.com/a/b').must_equal 2
+      URLMask.match('http://example.com/a/*', 'http://example.com/a/b').must_equal 2
+      URLMask.match('http://example.com/a/b', 'http://example.com/a/b').must_equal 3
+
+      URLMask.match(
+        'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag',
+        'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag'
+      ).must_equal 8
     end
   end
 
-  describe '.decompose_url' do
+
+  describe '#to_hash' do
+    it 'hands off processing to .url_to_hash' do
+      URLMask.expects(:url_to_hash).with('test').returns({})
+      m = URLMask.new('test')
+      m.to_hash
+    end
+
+    it 'memoizes' do
+      URLMask.expects(:url_to_hash).with('test').returns({})
+      m = URLMask.new('test')
+      m.to_hash
+      m.to_hash
+    end
+  end
+
+  describe '.url_to_hash' do
     it 'handles bad input' do
-      d = URLMask.decompose_url('this is clearly crap')
+      d = URLMask.url_to_hash('this is clearly crap')
       d.must_be_nil
     end
 
     it 'handles *' do
-      d = URLMask.decompose_url('*')
+      d = URLMask.url_to_hash('*')
       d[:protocol].must_be_nil
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -144,7 +164,7 @@ describe URLMask do
     end
 
     it 'handles example.com' do
-      d = URLMask.decompose_url('example.com')
+      d = URLMask.url_to_hash('example.com')
       d[:protocol].must_be_nil
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -156,7 +176,7 @@ describe URLMask do
     end
 
     it 'handles http://example.com' do
-      d = URLMask.decompose_url('http://example.com')
+      d = URLMask.url_to_hash('http://example.com')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -168,7 +188,7 @@ describe URLMask do
     end
 
     it 'handles http://*' do
-      d = URLMask.decompose_url('http://*')
+      d = URLMask.url_to_hash('http://*')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -180,7 +200,7 @@ describe URLMask do
     end
 
     it 'handles example.com:80' do
-      d = URLMask.decompose_url('example.com:80')
+      d = URLMask.url_to_hash('example.com:80')
       d[:protocol].must_be_nil
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -192,7 +212,7 @@ describe URLMask do
     end
 
     it 'handles https://example.com/' do
-      d = URLMask.decompose_url('https://example.com/')
+      d = URLMask.url_to_hash('https://example.com/')
       d[:protocol].must_equal 'https'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -204,7 +224,7 @@ describe URLMask do
     end
 
     it 'handles http://example.com:12345' do
-      d = URLMask.decompose_url('http://example.com:12345')
+      d = URLMask.url_to_hash('http://example.com:12345')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -216,7 +236,7 @@ describe URLMask do
     end
 
     it 'handles http://user:pass@example.com' do
-      d = URLMask.decompose_url('http://user:pass@example.com')
+      d = URLMask.url_to_hash('http://user:pass@example.com')
       d[:protocol].must_equal 'http'
       d[:username].must_equal 'user'
       d[:password].must_equal 'pass'
@@ -228,7 +248,7 @@ describe URLMask do
     end
 
     it 'handles http://user:@example.com' do
-      d = URLMask.decompose_url('http://user:@example.com')
+      d = URLMask.url_to_hash('http://user:@example.com')
       d[:protocol].must_equal 'http'
       d[:username].must_equal 'user'
       d[:password].must_equal ''
@@ -240,7 +260,7 @@ describe URLMask do
     end
 
     it 'handles http://example.com/some/path?query=true' do
-      d = URLMask.decompose_url('http://example.com/some/path?query=true')
+      d = URLMask.url_to_hash('http://example.com/some/path?query=true')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -252,7 +272,7 @@ describe URLMask do
     end
 
     it 'handles https://example.com?query=true' do
-      d = URLMask.decompose_url('https://example.com?query=true')
+      d = URLMask.url_to_hash('https://example.com?query=true')
       d[:protocol].must_equal 'https'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -264,7 +284,7 @@ describe URLMask do
     end
 
     it 'handles HTTP://Example.COM/PATH#frag' do
-      d = URLMask.decompose_url('HTTP://Example.COM/PATH#frag')
+      d = URLMask.url_to_hash('HTTP://Example.COM/PATH#frag')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -276,7 +296,7 @@ describe URLMask do
     end
 
     it 'handles file:///path/to/a/file' do
-      d = URLMask.decompose_url('file:///path/to/a/file')
+      d = URLMask.url_to_hash('file:///path/to/a/file')
       d[:protocol].must_equal 'file'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -288,7 +308,7 @@ describe URLMask do
     end
 
     it 'handles http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag' do
-      d = URLMask.decompose_url('http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag')
+      d = URLMask.url_to_hash('http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag')
       d[:protocol].must_equal 'http'
       d[:username].must_equal 'user'
       d[:password].must_equal 'pass'

@@ -8,13 +8,21 @@ URLMask provides two related functions: matching of a URL to a URL mask
 that can contain wildcards, and non-strict parsing of a URL into its
 component pieces.
 
-Ruby's built-in URI library is not suitable for non-strict parsing,
-so URLMask provides a lenient, regex-based matcher to decompose URLs
-that look like the following:
-
+`URLMask.url_to_hash` and `URLMask#to_hash` parse into Hash format URLs
+which look like the following:
+ 
 ```
 [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
 ```
+
+Further, URL masks can be constructed using some or all of the above
+fields, replacing some or all of those fields with a `*` wildcard,
+either in string format or in hash format (through `URLMask.new`).
+
+These URL masks can be compared to URLs to not only determine whether a
+yes-or-no match was reached (through `matches?`), but also provide a
+numeric match score by which multiple URL masks can be sorted for
+specificity (through `match`).
 
 ## Usage
 
@@ -31,7 +39,7 @@ mask.matches?('http://www.example.com:8080')        # => false
 mask.matches?('www.us.example.com')                 # => true
 mask.matches?('example.com')                        # => false
 
-mask.decompose
+mask.to_hash
 # => {:protocol=>nil, :username=>nil, :password=>nil,
 #     :hostname=>"*.example.com", :port=>80, :path=>nil, 
 #     :query=>nil, :fragment=>nil}
