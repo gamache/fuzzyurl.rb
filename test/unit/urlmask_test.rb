@@ -2,20 +2,19 @@ require 'test_helper'
 
 MATCHES = <<-EOT.split(/\s+/)
 
-  *         http://example.com
-  *         http://example.com/
-  *         https://example.com/
-  *         http://username:password@api.example.com/v1
-  *         http://www53.cdn.example.com/?something=1&xss=true
-  *         http://example.com/Q@(@*&%&!
-  *         http://example.com
+  *                   http://example.com
+  *                   http://example.com/
+  *                   https://example.com/
+  *                   http://username:password@api.example.com/v1
+  *                   http://www53.cdn.example.com/?something=1&xss=true
+  *                   http://example.com/Q@(@*&%&!
+  *                   http://example.com
 
-
-  http://*  http://example.com
-  http://*  example.com
-  http://*  http://example.com:80
-  http://*  http://example.com:8080
-  http://*  http://example.com/some/path?args=1
+  http://*            http://example.com
+  http://*            example.com
+  http://*            http://example.com:80
+  http://*            http://example.com:8080
+  http://*            http://example.com/some/path?args=1
 
   example.com         example.com
   example.com         example.com:80
@@ -29,18 +28,30 @@ MATCHES = <<-EOT.split(/\s+/)
   http://example.com  example.com/a/b/c
   http://example.com  example.com:80/a/b/c
 
-  http://*.example.com  api.example.com
+  example.com/a/*     example.com/a/b/c
 
+  *.example.com       api.example.com
+
+  example.com:8080    example.com:8080
+  localhost:12345     localhost:12345
+
+  example.com:443     https://example.com/
 EOT
 
 NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
 
-  http://*  https://example.com
-  https://* http://example.com
+  http://*            https://example.com
+  https://*           http://example.com
 
-  http://example.com   http://www.example.com
+  http://example.com  http://www.example.com
 
-  *.example.com  example.com
+  *.example.com       example.com
+
+  example.com/a/*     example.com/b/a/b/c
+  example.com/a/*     foobar.com/a/b/c
+
+  example.com:80      example.com:81
+  https://example.com example.com:443
 
 EOT
 
@@ -64,6 +75,29 @@ describe URLMask do
       end
     end
   end
+
+  describe '#matches' do
+    it 'handles positive matches' do
+      i = 0
+      while i < MATCHES.count-1
+        mask = MATCHES[i+=1]
+        url = MATCHES[i+=1]
+        urlmask = URLMask.new(mask)
+        urlmask.matches?(url).must_equal true, "#{mask} vs #{url}"
+      end
+    end
+
+    it 'handles negative matches' do
+      i = 0
+      while i < NEGATIVE_MATCHES.count-1
+        mask = NEGATIVE_MATCHES[i+=1]
+        url = NEGATIVE_MATCHES[i+=1]
+        urlmask = URLMask.new(mask)
+        urlmask.matches?(url).must_equal false, "#{mask} vs #{url}"
+      end
+    end
+  end
+
 
   describe '#decompose_url' do
     it 'handles bad input' do
