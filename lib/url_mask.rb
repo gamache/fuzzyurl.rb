@@ -41,15 +41,17 @@ class URLMask
     @mask = mask
   end
 
-  ## Returns true if this URLMask matches the given URL string, false
-  ## otherwise.
+  ## Matches the given URL against this URLMask.
+  ## Returns nil on negative match, and an integer match score otherwise.
+  ## This match score is higher for more specific matches.
+  def match(url)
+    self.class.match_decomposed(self.decompose, self.class.decompose_url(url))
+  end
+
+  ## Matches the given URL against this URLMask.
+  ## Returns true on positive match, false otherwise.
   def matches?(url)
-    begin
-      self.class.compare_decomposed(self.decompose,
-                                    self.class.decompose_url(url))
-    rescue ArgumentError
-      false
-    end
+    match(url) ? true : false
   end
 
   ## Returns this URLMask's decomposed (Hash) form.
@@ -66,6 +68,7 @@ class URLMask
   def to_hash
     decompose
   end
+
 
   class << self
 
@@ -134,50 +137,74 @@ class URLMask
       end
     end
 
-    ## Compares a URL mask string with a URL string.  Returns true on
-    ## positive match, false otherwise.  Raises ArgumentError when
-    ## given malformed URLs.
-    def compare(mask, url)
+    ## Matches a URL mask string with a URL string.
+    ## Raises ArgumentError when given malformed URLs.
+    ## Returns true on positive match, false otherwise.
+    def matches?(mask, url)
+      match(mask, url) ? true : false
+    end
+
+    ## Matches a URL mask string with a URL string.
+    ## Raises ArgumentError when given malformed URLs.
+    ## Returns nil on negative match, and an integer match score otherwise.
+    ## This match score is higher for more specific matches.
+    def match(mask, url)
       unless mask_parts = decompose_url(mask)
         raise ArgumentError, "Badly formed URL mask: #{mask.inspect}"
       end
       unless url_parts = decompose_url(url)
         raise ArgumentError, "Badly formed URL: #{url.inspect}"
       end
-      compare_decomposed(mask_parts, url_parts)
+      match_decomposed(mask_parts, url_parts)
     end
 
 
     ## Compares a decomposed URL mask with a decomposed URL string.
+    ## Returns nil on negative match, and an integer match score otherwise.
+    ## This match score is higher for more specific matches.
+    def match_decomposed(mask, url)
+      score = 0
+      tally = Proc.new {|x| return nil unless x; score += x}
+
+      tally.call match_hostnames(mask[:hostname], url[:hostname])
+      tally.call match_protocols_and_ports(mask, url)
+      tally.call match_paths(mask[:path], url[:path])
+      tally.call fuzzy_match(mask[:query], url[:query])
+      tally.call fuzzy_match(mask[:username], url[:username])
+      tally.call fuzzy_match(mask[:password], url[:password])
+      tally.call fuzzy_match(mask[:fragment], url[:fragment])
+    end
+
+    ## Matches a decomposed URL mask against a decomposed URL.
     ## Returns true on positive match, false otherwise.
-    def compare_decomposed(mask, url)
-      return false unless compare_hostnames(mask[:hostname], url[:hostname])
-      return false unless compare_protocols_and_ports(mask, url)
-      return false unless compare_paths(mask[:path], url[:path])
-      return false unless fuzzy_match(mask[:query], url[:query])
-      return false unless fuzzy_match(mask[:username], url[:username])
-      return false unless fuzzy_match(mask[:password], url[:password])
-      return false unless fuzzy_match(mask[:fragment], url[:fragment])
-      true
+    def matches_decomposed?(mask, url)
+      match_decomposed(mask, url) ? true : false
     end
 
   private
 
-    ## Compares protocol and port information.  Returns true on positive match.
-    def compare_protocols_and_ports(mask_parts, url_parts)
+    ## Matches protocol and port information.
+    ## Returns nil for no match, 0 for a wildcard match, or 1 for an
+    ## exact match.
+    def match_protocols_and_ports(mask_parts, url_parts)
+      wildcard_match = false
       mask_protocol = mask_parts[:protocol] || 'http'
       url_protocol = url_parts[:protocol] || 'http'
-      if mask_parts[:protocol]
-        return false if mask_protocol != '*' && mask_protocol != url_protocol
+      if mask_parts[:protocol] && mask_protocol != '*'
+        return nil if mask_protocol != url_protocol
+      else
+        wildcard_match = true
       end
 
       mask_port = mask_parts[:port]
       url_port = url_parts[:port] || PORT_BY_PROTOCOL[url_protocol]
-      if mask_parts[:port]
-        return false if mask_port != '*' && mask_port != url_port
+      if mask_parts[:port] && mask_port != '*'
+        return nil if mask_port != url_port
+      else
+        wildcard_match = true
       end
 
-      true
+      wildcard_match ? 0 : 1
     end
 
     PORT_BY_PROTOCOL = {
@@ -186,39 +213,48 @@ class URLMask
       'file'  => nil,
     }
 
-    ## Compares two elements of a URL.  Handles wildcards correctly.
+    ## Matches a mask against an element of a URL.  Handles wildcards.
+    ## Returns nil for no match, 0 for a wildcard match, or 1 for an
+    ## exact match.
     def fuzzy_match(mask, piece)
-      return false if mask && piece && mask != piece && mask != '*'
-      true
+      return 0 if !mask || mask == '*' || !piece
+      return 1 if mask == piece
+      nil
     end
 
-    ## *.example.com => 'com', 'example', '*'
-    ## example.com   => 'com', 'example'
-    ## This should not match.
-    def compare_hostnames(mask, host)
-      compare_pieces((mask || '').split('.').reverse,
-                     (host || '').split('.').reverse,
-                     :ignore_depth => false)
+    ## Matches a hostname mask against a hostname.
+    ## Returns nil for no match, 0 for a wildcard match, or 1 for an
+    ## exact match.
+    def match_hostnames(mask, host)
+      mask_pieces = (mask || '').split('.').reverse
+      host_pieces = (host || '').split('.').reverse
+      return 1 if mask && host && mask_pieces==host_pieces
+      return 0 if match_pieces(mask_pieces, host_pieces, :ignore_depth => false)
+      nil
     end
 
-    ## /some/path/*  => '', 'some', 'path', '*'
-    ## /some/path    => '', 'some', 'path'
-    ## This should match.
-    def compare_paths(mask, path)
-      compare_pieces((mask || '*').split(%r{/}),
-                     (path || '/').split(%r{/}),
-                     :ignore_depth => true)
+    ## Matches a path mask against a path.
+    ## Returns nil for no match, 0 for a wildcard match, or 1 for an
+    ## exact match.
+    def match_paths(mask, path)
+      mask_pieces = (mask || '*').split(%r{/})
+      path_pieces = (path || '/').split(%r{/})
+      return 1 if mask && path && mask_pieces==path_pieces
+      return 0 if match_pieces(mask_pieces, path_pieces, :ignore_depth => true)
+      nil
     end
 
-    ## Compares arrays of URL or hostname pieces.
-    def compare_pieces(mask, pieces, args)
+    ## Matches arrays of URL or hostname pieces.
+    ## Returns nil for no match, 0 for a wildcard match, or 1 for an
+    ## exact match.
+    def match_pieces(mask, pieces, args)
       ignore_depth = args[:ignore_depth]
-      return false if !ignore_depth && mask.count > pieces.count
+      return nil if !ignore_depth && mask.count > pieces.count
       pieces.each_with_index do |piece, i|
-        return true if piece && mask[i] == '*'
-        return false if mask[i] != piece
+        return 0 if piece && mask[i] == '*'
+        return nil if mask[i] != piece
       end
-      true
+      1
     end
 
   end # class << self

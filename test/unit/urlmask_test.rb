@@ -57,10 +57,10 @@ NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
 EOT
 
 describe URLMask do
-  describe '.compare' do
-    it 'passes control to .compare_decomposed' do
-      URLMask.expects(:compare_decomposed).returns(true)
-      URLMask.compare('*', '*')
+  describe '.matches?' do
+    it 'passes control to .match_decomposed' do
+      URLMask.expects(:match_decomposed).returns(true)
+      URLMask.match('*', '*')
     end
 
     it 'handles positive matches' do
@@ -68,7 +68,7 @@ describe URLMask do
       while i < MATCHES.count-1
         mask = MATCHES[i+=1]
         url = MATCHES[i+=1]
-        URLMask.compare(mask, url).must_equal true, "#{mask} vs #{url}"
+        URLMask.matches?(mask, url).must_equal true, "#{mask} vs #{url}"
       end
     end
 
@@ -77,14 +77,14 @@ describe URLMask do
       while i < NEGATIVE_MATCHES.count-1
         mask = NEGATIVE_MATCHES[i+=1]
         url = NEGATIVE_MATCHES[i+=1]
-        URLMask.compare(mask, url).must_equal false, "#{mask} vs #{url}"
+        URLMask.matches?(mask, url).must_equal false, "#{mask} vs #{url}"
       end
     end
   end
 
   describe '#matches' do
-    it 'passes control to .compare_decomposed' do
-      URLMask.expects(:compare_decomposed).returns(true)
+    it 'passes control to .match_decomposed' do
+      URLMask.expects(:match_decomposed).returns(true)
       mask = URLMask.new('*')
       mask.matches?('*')
     end
