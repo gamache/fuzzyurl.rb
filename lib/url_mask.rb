@@ -1,3 +1,14 @@
+## URLMask is a class for representing a URL mask with wildcards, and for
+## matching other URLs against that URL mask.
+##
+## Example usage:
+##
+##   mask = URLMask.new('http://example.com/*')
+##   mask.matches?('http://example.com')        # => true
+##   mask.matches?('http://example.com/a/b/c')  # => true
+##   mask.matches?('https://example.com')       # => false
+##   mask.matches?('http://foobar.com')         # => false
+
 class URLMask
 
   ## The mask URL string for this URLMask.
