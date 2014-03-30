@@ -75,6 +75,11 @@ class URLMask < Hash
     @string.clone
   end
 
+  # @private
+  def inspect
+    "#<URLMask object_id=#{object_id} @string=#{@string.inspect} #{super}"
+  end
+
 
   class << self
 
@@ -227,9 +232,13 @@ class URLMask < Hash
       end
 
       mask_port = mask_hash[:port]
-      url_port = url_hash[:port] || PORT_BY_PROTOCOL[url_protocol]
+      url_port = url_hash[:port]
       if mask_hash[:port] && mask_port != '*'
-        return nil if mask_port != url_port
+        if mask_port == PORT_BY_PROTOCOL[url_protocol]
+          wildcard_matches += 1
+        else
+          return nil if mask_port != url_port
+        end
       else
         wildcard_matches += 1
       end

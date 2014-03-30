@@ -126,6 +126,8 @@ describe URLMask do
         'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag',
         'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag'
       ).must_equal 8
+
+      URLMask.match('*.example.com:80', 'api.example.com').must_equal 0
     end
   end
 
