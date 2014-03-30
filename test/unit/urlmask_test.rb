@@ -98,7 +98,6 @@ describe URLMask do
     end
   end
 
-
   describe '#decompose_url' do
     it 'handles bad input' do
       d = URLMask.decompose_url('this is clearly crap')
@@ -153,7 +152,6 @@ describe URLMask do
       d[:fragment].must_be_nil
     end
 
-
     it 'handles example.com:80' do
       d = URLMask.decompose_url('example.com:80')
       d[:protocol].must_be_nil
@@ -165,7 +163,6 @@ describe URLMask do
       d[:query].must_be_nil
       d[:fragment].must_be_nil
     end
-
 
     it 'handles https://example.com/' do
       d = URLMask.decompose_url('https://example.com/')
@@ -179,7 +176,6 @@ describe URLMask do
       d[:fragment].must_be_nil
     end
 
-
     it 'handles http://example.com:12345' do
       d = URLMask.decompose_url('http://example.com:12345')
       d[:protocol].must_equal 'http'
@@ -191,7 +187,6 @@ describe URLMask do
       d[:query].must_be_nil
       d[:fragment].must_be_nil
     end
-
 
     it 'handles http://user:pass@example.com' do
       d = URLMask.decompose_url('http://user:pass@example.com')
@@ -205,7 +200,6 @@ describe URLMask do
       d[:fragment].must_be_nil
     end
 
-
     it 'handles http://user:@example.com' do
       d = URLMask.decompose_url('http://user:@example.com')
       d[:protocol].must_equal 'http'
@@ -217,7 +211,6 @@ describe URLMask do
       d[:query].must_be_nil
       d[:fragment].must_be_nil
     end
-
 
     it 'handles http://example.com/some/path?query=true' do
       d = URLMask.decompose_url('http://example.com/some/path?query=true')
@@ -231,7 +224,6 @@ describe URLMask do
       d[:fragment].must_be_nil
     end
 
-
     it 'handles https://example.com?query=true' do
       d = URLMask.decompose_url('https://example.com?query=true')
       d[:protocol].must_equal 'https'
@@ -243,7 +235,6 @@ describe URLMask do
       d[:query].must_equal 'query=true'
       d[:fragment].must_be_nil
     end
-
 
     it 'handles HTTP://Example.COM/PATH#frag' do
       d = URLMask.decompose_url('HTTP://Example.COM/PATH#frag')
@@ -257,7 +248,6 @@ describe URLMask do
       d[:fragment].must_equal 'frag'
     end
 
-
     it 'handles file:///path/to/a/file' do
       d = URLMask.decompose_url('file:///path/to/a/file')
       d[:protocol].must_equal 'file'
@@ -270,7 +260,6 @@ describe URLMask do
       d[:fragment].must_be_nil
     end
 
-
     it 'handles http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag' do
       d = URLMask.decompose_url('http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag')
       d[:protocol].must_equal 'http'
@@ -282,6 +271,6 @@ describe URLMask do
       d[:query].must_equal 'query=true&foo=bar'
       d[:fragment].must_equal 'frag'
     end
-
   end
+
 end
