@@ -1,4 +1,5 @@
 require 'url_mask/version'
+require 'pp'
 
 ## URLMask is a class for representing a URL mask with wildcards, and for
 ## matching other URLs against that URL mask.  It also contains facilities
@@ -42,13 +43,16 @@ class URLMask < Hash
   def initialize(mask)
     case mask
     when String
-      self.send(:initialize_copy, self.class.url_to_hash(mask))
+      unless hash = self.class.url_to_hash(mask)
+        raise ArgumentError, "Bad mask URL: #{mask.inspect}"
+      end
+      initialize_copy(hash)
       @string = mask
     when Hash
-      self.send(:initialize_copy, mask)
+      initialize_copy(mask)
       @string = self.class.hash_to_url(mask)
     else
-      raise ArgumentError, "mask must be String or Hash; got #{mask.inspect}"
+      raise ArgumentError, "mask must be a String or a Hash; got #{mask.inspect}"
     end
   end
 
@@ -72,12 +76,12 @@ class URLMask < Hash
 
   ## Returns this URLMask's string form.
   def to_s
-    @string.clone
+    @string ? @string.clone : ''
   end
 
   # @private
   def inspect
-    "#<URLMask object_id=#{object_id} @string=#{@string.inspect} #{super}"
+    "#<URLMask object_id=#{object_id} @string=#{@string.inspect} #{super}>"
   end
 
 
@@ -101,36 +105,33 @@ class URLMask < Hash
       if m = url.match(%r{
             ^
 
-            (?: (\* | [a-zA-Z]+) ://)?       ## m[1] is protocol
+            (?: (\* | [a-zA-Z]+) ://)?             ## m[1] is protocol
 
-            (?: (\* | [a-zA-Z0-9]+)          ## m[2] is username
-                (?: : (\* | [a-zA-Z0-9]*))   ## m[3] is password
+            (?: (\* | [a-zA-Z0-9_]+)                ## m[2] is username
+                (?: : (\* | [a-zA-Z0-9_]*))?        ## m[3] is password
                 @
             )?
 
-            ([a-zA-Z0-9\.\*\-]+?)?           ## m[4] is hostname
+            ([a-zA-Z0-9\.\*\-]+?)?                 ## m[4] is hostname
 
-            (?: : (\* | \d+))?               ## m[5] is port
+            (?: : (\* | \d+))?                     ## m[5] is port
 
-            (/ [^\?\#]*)?                    ## m[6] is path
-                                             ## captures leading /
+            (/ [^\?\#]*)?                          ## m[6] is path
+                                                   ## captures leading /
 
-            (?: \? ([^\#]*) )?               ## m[7] is query
+            (?: \? ([^\#]*) )?                     ## m[7] is query
 
-            (?: \# (.*) )?                   ## m[8] is fragment
+            (?: \# (.*) )?                         ## m[8] is fragment
 
             $
           }x)
+
         protocol = m[1] ? m[1].downcase : nil
         username = m[2]
         password = m[3]
         hostname = m[4] ? m[4].downcase : nil
-
-        port = m[5] ? m[5].to_i : nil
-        port = port.to_i if port
-
-        path = m[6]
-
+        port     = m[5] ? m[5].to_i : nil
+        path     = m[6]
         query    = m[7]
         fragment = m[8]
 
@@ -138,9 +139,9 @@ class URLMask < Hash
           :username => username,
           :password => password,
           :hostname => hostname,
-          :port => port,
-          :path => path,
-          :query => query,
+          :port     => port,
+          :path     => path,
+          :query    => query,
           :fragment => fragment }
 
       else ## no match
@@ -153,18 +154,18 @@ class URLMask < Hash
     ## or nil), return a URL string containing these elements.
     def hash_to_url(hash)
       url = ''
-      url << hash[:protocol] + '://' if hash[:protocol]
+      url << hash[:protocol]+'://' if hash[:protocol]
       if hash[:username]
         url << hash[:username]
-        url << ':' + hash[:password] if hash[:password]
+        url << ':'+hash[:password] if hash[:password]
         url << '@'
       end
       url << hash[:hostname] if hash[:hostname]
-      url << ':' + hash[:port] if hash[:port]
+      url << ':'+hash[:port] if hash[:port]
 
       ## make sure path starts with a / if it's defined
       path = hash[:path]
-      path = '/' + path if path && path.index('/') != 0
+      path = '/'+path if path && path.index('/') != 0
       url << path.to_s
 
       url << '?'+hash[:query] if hash[:query]
@@ -204,6 +205,7 @@ class URLMask < Hash
       tally.call match_hostnames(mask[:hostname], url[:hostname])
       tally.call match_protocols_and_ports(mask, url)
       tally.call match_paths(mask[:path], url[:path])
+      tally.call fuzzy_match(mask[:port], url[:port])
       tally.call fuzzy_match(mask[:query], url[:query])
       tally.call fuzzy_match(mask[:username], url[:username])
       tally.call fuzzy_match(mask[:password], url[:password])
@@ -252,11 +254,11 @@ class URLMask < Hash
       'file'  => nil,
     }
 
-    ## Matches a mask against an element of a URL.  Handles wildcards.
+    ## Matches a picee of a mask against a piece of a URL.  Handles wildcards.
     ## Returns nil for no match, 0 for a wildcard match, or 1 for an
     ## exact match.
     def fuzzy_match(mask, piece)
-      return 0 if !mask || mask == '*' || !piece
+      return 0 if !mask || mask == '*'    # || !piece
       return 1 if mask == piece
       nil
     end
