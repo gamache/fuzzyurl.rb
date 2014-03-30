@@ -21,7 +21,7 @@ class URLMask
   class << self
 
     def debug(str)
-     # STDERR.puts '  ' + str
+      #STDERR.puts '  ' + str
     end
 
     def compare(mask, url)
@@ -32,12 +32,10 @@ class URLMask
         raise ArgumentError, "Badly formed URL: #{url.inspect}"
       end
 
-     # STDERR.puts "#{mask} vs #{url}:"
+      #STDERR.puts "#{mask} vs #{url}:"
 
       return false unless compare_protocols_and_ports(mask_parts, url_parts)
 
-      debug("matched protocol")
-      debug("matched port")
       return false unless fuzzy_match(mask_parts[:username],
                                       url_parts[:username])
 
@@ -58,8 +56,7 @@ class URLMask
                                             url_parts[:hostname])
 
       debug("matched hostnames")
-      #puts mask_parts[:path].inspect
-      #puts url_parts[:path].inspect
+
       return false unless compare_paths(mask_parts[:path],
                                         url_parts[:path])
       debug("matched paths")
@@ -74,36 +71,50 @@ class URLMask
       if mask_parts[:protocol]
         return false if mask_protocol != '*' && mask_protocol != url_protocol
       end
+      debug("matched protocol")
 
       mask_port = mask_parts[:port]
       url_port = url_parts[:port] || PORT_BY_PROTOCOL[url_protocol]
       if mask_parts[:port]
         return false if mask_port != '*' && mask_port != url_port
       end
+      debug("matched port")
 
       true
     end
 
     def fuzzy_match(mask, piece)
       if mask
-        if mask != piece && mask != '*'
+        if mask != piece && mask != '*' && piece
           return false
         end
       end
       true
     end
 
+    ## *.example.com => 'com', 'example', '*'
+    ## example.com   => 'com', 'example'
+    ## This should not match.
     def compare_hostnames(mask, host)
       compare_pieces((mask || '').split('.').reverse,
-                     (host || '').split('.').reverse)
+                     (host || '').split('.').reverse,
+                     :ignore_depth => false)
     end
 
+    ## /some/path/*  => '', 'some', 'path', '*'
+    ## /some/path    => '', 'some', 'path'
+    ## This should match.
     def compare_paths(mask, path)
-      compare_pieces((mask || '/*').split('/'),
-                     (path || '/').split('/'))
+      compare_pieces((mask || '*').split(%r{/}),
+                     (path || '/').split(%r{/}),
+                     :ignore_depth => true)
     end
 
-    def compare_pieces(mask, pieces)
+    def compare_pieces(mask, pieces, args)
+      ignore_depth = args[:ignore_depth]
+      return false if !ignore_depth && mask.count > pieces.count
+      #puts mask.inspect
+      #puts pieces.inspect
       i = 0
       pieces.each do |piece|
         #puts "piece #{i}: #{mask[i].inspect} vs #{piece.inspect}"
@@ -111,13 +122,13 @@ class URLMask
         return false if mask[i] != piece
         i += 1
       end
-      #return false if mask[i]
       true
     end
 
     def decompose_url(url)
       if m = url.match(%r{
             ^
+
             (?: ([a-zA-Z]+) ://)?         ## m[1] is protocol
 
             (?: ([a-zA-Z0-9]+)            ## m[2] is username
@@ -144,14 +155,10 @@ class URLMask
         password = m[3]
         hostname = m[4] ? m[4].downcase : nil
 
-        #if !(port = m[5]) && PORT_BY_PROTOCOL.has_key?(protocol)
-          #port = PORT_BY_PROTOCOL[protocol]
-        #end
         port = m[5] ? m[5].to_i : nil
         port = port.to_i if port
 
         path = m[6]
-        path = nil if path == ''
 
         query    = m[7]
         fragment = m[8]
