@@ -1,5 +1,6 @@
 ## URLMask is a class for representing a URL mask with wildcards, and for
-## matching other URLs against that URL mask.
+## matching other URLs against that URL mask.  It also contains facilities
+## for non-strict parsing of common URLs.
 ##
 ## Example usage:
 ##
@@ -8,6 +9,22 @@
 ##   mask.matches?('http://example.com/a/b/c')  # => true
 ##   mask.matches?('https://example.com')       # => false
 ##   mask.matches?('http://foobar.com')         # => false
+##
+## It is important to note that URLMask is not a URL validator!  It performs
+## lenient matching of URLs and URL masks like the following:
+##   [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
+##
+## In a URL mask, any part of the above may be replaced with a `*` character
+## to match anything.
+##
+## In a hostname, the most specific segment of the host (e.g., the "www"
+## in "www.us.example.com") may be replaced with a `*` character
+## (e.g., "*.us.example.com") in order to match domains like
+## "xxx.us.example.com" and "yyy.zzz.us.example.com", but not "us.example.com".
+##
+## In a path, a `*` character may be placed after a `/` character (e.g.,
+## "/a/b/*") in order to match paths like "/a/b" and "/a/b/c/d", but not
+## "/a/bcde".
 
 class URLMask
 
@@ -19,30 +36,31 @@ class URLMask
     @mask = mask
   end
 
-  ## Returns this URLMask's mask URL string.
-  def to_s
-    mask
-  end
-
   ## Returns true if this URLMask matches the given URL string, false
   ## otherwise.
   def matches?(url)
     begin
-      self.class.compare_decomposed(decomposed_mask,
+      self.class.compare_decomposed(self.decompose,
                                     self.class.decompose_url(url))
     rescue ArgumentError
       false
     end
   end
 
-private
-
-  ## Returns and memoizes this URLMask's decomposed form.
-  def decomposed_mask
-    @decomposed_mask ||= self.class.decompose_url(self.mask)
+  ## Returns this URLMask's decomposed (Hash) form.
+  def decompose
+    @decomposed ||= self.class.decompose_url(self.mask)
   end
 
-public
+  ## Returns this URLMask's mask URL string.
+  def to_s
+    mask
+  end
+
+  ## Returns this URLMask's decomposed (Hash) form.
+  def to_hash
+    decompose
+  end
 
   class << self
 
@@ -102,7 +120,8 @@ public
     end
 
     ## Compares a URL mask string with a URL string.  Returns true on
-    ## positive match, false otherwise.
+    ## positive match, false otherwise.  Raises ArgumentError when
+    ## given malformed URLs.
     def compare(mask, url)
       unless mask_parts = decompose_url(mask)
         raise ArgumentError, "Badly formed URL mask: #{mask.inspect}"
@@ -117,13 +136,13 @@ public
     ## Compares a decomposed URL mask with a decomposed URL string.
     ## Returns true on positive match, false otherwise.
     def compare_decomposed(mask, url)
+      return false unless compare_hostnames(mask[:hostname], url[:hostname])
       return false unless compare_protocols_and_ports(mask, url)
+      return false unless compare_paths(mask[:path], url[:path])
+      return false unless fuzzy_match(mask[:query], url[:query])
       return false unless fuzzy_match(mask[:username], url[:username])
       return false unless fuzzy_match(mask[:password], url[:password])
-      return false unless fuzzy_match(mask[:query], url[:query])
       return false unless fuzzy_match(mask[:fragment], url[:fragment])
-      return false unless compare_hostnames(mask[:hostname], url[:hostname])
-      return false unless compare_paths(mask[:path], url[:path])
       true
     end
 
@@ -152,7 +171,7 @@ public
       'file'  => nil,
     }
 
-    ## Compares two elements of a URL.  
+    ## Compares two elements of a URL.  Handles wildcards correctly.
     def fuzzy_match(mask, piece)
       return false if mask && piece && mask != piece && mask != '*'
       true
