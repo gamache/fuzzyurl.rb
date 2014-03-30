@@ -4,21 +4,26 @@
 ##
 ## Example usage:
 ##
-##   mask = URLMask.new('http://example.com/*')
-##   mask.matches?('http://example.com')        # => true
-##   mask.matches?('http://example.com/a/b/c')  # => true
-##   mask.matches?('https://example.com')       # => false
-##   mask.matches?('http://foobar.com')         # => false
+## ```
+## mask = URLMask.new('http://example.com/*')
+## mask.matches?('http://example.com')        # => true
+## mask.matches?('http://example.com/a/b/c')  # => true
+## mask.matches?('https://example.com')       # => false
+## mask.matches?('http://foobar.com')         # => false
+## ```
 ##
 ## It is important to note that URLMask is not a URL validator!  It performs
 ## lenient matching of URLs and URL masks like the following:
-##   [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
+##
+## ```
+## [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
+## ```
 ##
 ## In a URL mask, any part of the above may be replaced with a `*` character
 ## to match anything.
 ##
-## In a hostname, the most specific segment of the host (e.g., the "www"
-## in "www.us.example.com") may be replaced with a `*` character
+## In a hostname, the most specific segment of the host (e.g., the "xyz"
+## in "xyz.us.example.com") may be replaced with a `*` character
 ## (e.g., "*.us.example.com") in order to match domains like
 ## "xxx.us.example.com" and "yyy.zzz.us.example.com", but not "us.example.com".
 ##
@@ -72,8 +77,11 @@ class URLMask
     ## Returns nil if given a malformed URL.
     ##
     ## Example:
-    ##   URLMask.decompose_url('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
-    ##   # => {:protocol=>"http", :username=>"user", :password=>"pass", :hostname=>"example.com", :port=>8080, :path=>"/some/path/", :query=>"foo=bar&baz=1", :fragment=>"url-fragment"} 
+    ##
+    ## ```
+    ## URLMask.decompose_url('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
+    ## # => {:protocol=>"http", :username=>"user", :password=>"pass", :hostname=>"example.com", :port=>8080, :path=>"/some/path/", :query=>"foo=bar&baz=1", :fragment=>"url-fragment"} 
+    ## ```
 
     def decompose_url(url)
       if m = url.match(%r{

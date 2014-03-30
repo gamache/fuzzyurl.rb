@@ -31,6 +31,7 @@ MATCHES = <<-EOT.split(/\s+/)
   example.com/a/*     example.com/a/b/c
 
   *.example.com       api.example.com
+  *.example.com       xxx.yyy.example.com
 
   example.com:8080    example.com:8080
   localhost:12345     localhost:12345
@@ -50,13 +51,18 @@ NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
   example.com/a/*     example.com/b/a/b/c
   example.com/a/*     foobar.com/a/b/c
 
-  example.com:80      example.com:81
+  example.com:888     example.com:8888
   https://example.com example.com:443
 
 EOT
 
 describe URLMask do
   describe '.compare' do
+    it 'passes control to .compare_decomposed' do
+      URLMask.expects(:compare_decomposed).returns(true)
+      URLMask.compare('*', '*')
+    end
+
     it 'handles positive matches' do
       i = 0
       while i < MATCHES.count-1
@@ -77,6 +83,12 @@ describe URLMask do
   end
 
   describe '#matches' do
+    it 'passes control to .compare_decomposed' do
+      URLMask.expects(:compare_decomposed).returns(true)
+      mask = URLMask.new('*')
+      mask.matches?('*')
+    end
+
     it 'handles positive matches' do
       i = 0
       while i < MATCHES.count-1
@@ -98,7 +110,22 @@ describe URLMask do
     end
   end
 
-  describe '#decompose_url' do
+  describe '#decompose' do
+    it 'hands off processing to .decompose_url' do
+      URLMask.expects(:decompose_url).with('test').returns({})
+      m = URLMask.new('test')
+      m.decompose
+    end
+
+    it 'memoizes' do
+      URLMask.expects(:decompose_url).with('test').returns({})
+      m = URLMask.new('test')
+      m.decompose
+      m.decompose
+    end
+  end
+
+  describe '.decompose_url' do
     it 'handles bad input' do
       d = URLMask.decompose_url('this is clearly crap')
       d.must_be_nil
