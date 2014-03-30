@@ -65,30 +65,37 @@ class URLMask
   class << self
 
     ## Given a URL, returns a hash containing :protocol, :username, :password,
-    ## :hostname, :port, :path, :query, and :fragment (all String).
+    ## :hostname, :port, :path, :query, and :fragment fields (all String
+    ##  or nil).
+    ## Accepts `*` in place of any of the above fields, or as part of hostname
+    ## or path.
     ## Returns nil if given a malformed URL.
+    ##
+    ## Example:
+    ##   URLMask.decompose_url('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
+    ##   # => {:protocol=>"http", :username=>"user", :password=>"pass", :hostname=>"example.com", :port=>8080, :path=>"/some/path/", :query=>"foo=bar&baz=1", :fragment=>"url-fragment"} 
+
     def decompose_url(url)
       if m = url.match(%r{
             ^
 
-            (?: ([a-zA-Z]+) ://)?         ## m[1] is protocol
+            (?: (\* | [a-zA-Z]+) ://)?       ## m[1] is protocol
 
-            (?: ([a-zA-Z0-9]+)            ## m[2] is username
-                (?: : ([a-zA-Z0-9]*))     ## m[3] is password
+            (?: (\* | [a-zA-Z0-9]+)          ## m[2] is username
+                (?: : (\* | [a-zA-Z0-9]*))   ## m[3] is password
                 @
             )?
 
-            ([a-zA-Z0-9\.\*\-]+?)?        ## m[4] is hostname
-                                          ## match * too
+            ([a-zA-Z0-9\.\*\-]+?)?           ## m[4] is hostname
 
-            (?: : (\*|\d+))?              ## m[5] is port
-                                          ## match * too
+            (?: : (\* | \d+))?               ## m[5] is port
 
-            (/ [^\?\#]*)?                 ## m[6] is path
+            (/ [^\?\#]*)?                    ## m[6] is path
+                                             ## captures leading /
 
-            (?: \? ([^\#]*) )?            ## m[7] is query
+            (?: \? ([^\#]*) )?               ## m[7] is query
 
-            (?: \# (.*) )?                ## m[8] is fragment
+            (?: \# (.*) )?                   ## m[8] is fragment
 
             $
           }x)
