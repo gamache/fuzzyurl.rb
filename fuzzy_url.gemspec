@@ -1,4 +1,4 @@
-require './lib/url_mask/version'
+require './lib/fuzzy_url/version'
 
 Gem::Specification.new do |s|
   s.name     = 'fuzzyurl'
