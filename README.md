@@ -1,43 +1,58 @@
 # FuzzyURL
 
-A Ruby Gem for non-strict URL parsing and matching.
+A Ruby Gem for non-strict URL parsing and URL fuzzy matching.
 
-## What FuzzyURL Does
+## About FuzzyURL
 
-FuzzyURL provides two related functions: matching of a URL to a URL mask
-that can contain wildcards, and non-strict parsing of a URL into its
-component pieces.
+FuzzyURL provides two related functions: fuzzy matching of a URL to a URL
+mask that can contain wildcards, and non-strict parsing of URLs into their
+component pieces: protocol, username, password, hostname, port, path,
+query, and fragment.
 
-`FuzzyURL.url_to_hash` and `FuzzyURL#to_hash` parse into Hash format URLs
-which look like the following:
- 
+FuzzyURL provides two related functions: non-strict parsing of URLs or
+URL-like strings into their component pieces (protocol, username, password,
+hostname, port, path, query, and fragment), and fuzzy matching of URLs
+and URL patterns.
+
+FuzzyURL can decompose URLs that look like the following:
+
 ```
 [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
 ```
 
-Further, URL masks can be constructed using some or all of the above
+## Usage
+
+FuzzyURLs can be constructed using some or all of the above
 fields, replacing some or all of those fields with a `*` wildcard,
 either in string format or in hash format (through `FuzzyURL.new`).
+In addition, hostnames can use `*` as their first label (e.g., 
+"\*.example.com"), and paths can use `*` after the last path separator
+(`/`) in the path (e.g., "/some/path/\*").
 
-These URL masks can be compared to URLs to not only determine whether a
-yes-or-no match was reached (through `matches?`), but also provide a
+```ruby
+require 'fuzzyurl'
+
+fu = FuzzyURL.new('*.example.com:80')
+fu = FuzzyURL.new(hostname: '*.example.com', port: 80)  ## same thing
+```
+
+A FuzzyURL can be compared to URLs to not only determine whether a
+yes-or-no match was reached (through `matches?`):
+
+```ruby
+fu.matches?('http://www.example.com/index.html')  # => true
+fu.matches?('https://www.example.com')            # => false
+fu.matches?('http://www.example.com:8080')        # => false
+fu.matches?('www.us.example.com')                 # => true
+fu.matches?('example.com')                        # => false
+```
+
+...but also to provide a
 numeric match score by which multiple URL masks can be sorted for
 specificity (through `match`).
 
-## Usage
-
-FuzzyURL has no external dependencies, and is usable in Ruby 1.8.7 or above:
 
 ```ruby
-require 'urlmask'
-
-mask = FuzzyURL.new('*.example.com:80')
-
-mask.matches?('http://www.example.com/index.html')  # => true
-mask.matches?('https://www.example.com')            # => false
-mask.matches?('http://www.example.com:8080')        # => false
-mask.matches?('www.us.example.com')                 # => true
-mask.matches?('example.com')                        # => false
 
 mask.to_hash
 # => {:protocol=>nil, :username=>nil, :password=>nil,
