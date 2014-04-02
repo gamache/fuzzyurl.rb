@@ -13,12 +13,12 @@ end
 task :release do
   system(<<-EOT)
     git add lib/url_mask/version.rb
-    git commit -m 'release v#{URLMask::VERSION}'
+    git commit -m 'release v#{FuzzyURL::VERSION}'
     git push origin
-    git tag v#{URLMask::VERSION}
+    git tag v#{FuzzyURL::VERSION}
     git push --tags origin
     gem build url_mask.gemspec
-    gem push urlmask-#{URLMask::VERSION}.gem
+    gem push urlmask-#{FuzzyURL::VERSION}.gem
   EOT
 end
 

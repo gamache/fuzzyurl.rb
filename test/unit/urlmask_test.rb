@@ -62,12 +62,12 @@ NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
 
 EOT
 
-describe URLMask do
+describe FuzzyURL do
 
   describe '.matches?' do
     it 'passes control to .match_hash' do
-      URLMask.expects(:match_hash).returns(true)
-      URLMask.match('*', '*')
+      FuzzyURL.expects(:match_hash).returns(true)
+      FuzzyURL.match('*', '*')
     end
 
     it 'handles positive matches' do
@@ -75,7 +75,7 @@ describe URLMask do
       while i < MATCHES.count-1
         mask = MATCHES[i+=1]
         url = MATCHES[i+=1]
-        URLMask.matches?(mask, url).must_equal true, "#{mask} vs #{url}"
+        FuzzyURL.matches?(mask, url).must_equal true, "#{mask} vs #{url}"
       end
     end
 
@@ -84,15 +84,15 @@ describe URLMask do
       while i < NEGATIVE_MATCHES.count-1
         mask = NEGATIVE_MATCHES[i+=1]
         url = NEGATIVE_MATCHES[i+=1]
-        URLMask.matches?(mask, url).must_equal false, "#{mask} vs #{url}"
+        FuzzyURL.matches?(mask, url).must_equal false, "#{mask} vs #{url}"
       end
     end
   end
 
   describe '#matches?' do
     it 'passes control to .match_hash' do
-      URLMask.expects(:match_hash).returns(true)
-      mask = URLMask.new('*')
+      FuzzyURL.expects(:match_hash).returns(true)
+      mask = FuzzyURL.new('*')
       mask.matches?('*')
     end
 
@@ -101,7 +101,7 @@ describe URLMask do
       while i < MATCHES.count-1
         mask = MATCHES[i+=1]
         url = MATCHES[i+=1]
-        urlmask = URLMask.new(mask)
+        urlmask = FuzzyURL.new(mask)
         urlmask.matches?(url).must_equal true, "#{mask} vs #{url}"
       end
     end
@@ -111,7 +111,7 @@ describe URLMask do
       while i < NEGATIVE_MATCHES.count-1
         mask = NEGATIVE_MATCHES[i+=1]
         url = NEGATIVE_MATCHES[i+=1]
-        urlmask = URLMask.new(mask)
+        urlmask = FuzzyURL.new(mask)
         urlmask.matches?(url).must_equal false, "#{mask} vs #{url}"
       end
     end
@@ -119,36 +119,36 @@ describe URLMask do
 
   describe '.match' do
     it 'scores wildcards correctly' do
-      URLMask.match('*', 'http://example.com/a/b').must_equal 0
-      URLMask.match('*://*/*', 'http://example.com/a/b').must_equal 0
+      FuzzyURL.match('*', 'http://example.com/a/b').must_equal 0
+      FuzzyURL.match('*://*/*', 'http://example.com/a/b').must_equal 0
     end
 
     it 'scores exact matches correctly' do
-      URLMask.match('example.com', 'http://example.com/a/b').must_equal 1
-      URLMask.match('http://example.com', 'http://example.com/a/b').must_equal 2
-      URLMask.match('http://example.com/a/*', 'http://example.com/a/b').must_equal 2
-      URLMask.match('http://example.com/a/b', 'http://example.com/a/b').must_equal 3
+      FuzzyURL.match('example.com', 'http://example.com/a/b').must_equal 1
+      FuzzyURL.match('http://example.com', 'http://example.com/a/b').must_equal 2
+      FuzzyURL.match('http://example.com/a/*', 'http://example.com/a/b').must_equal 2
+      FuzzyURL.match('http://example.com/a/b', 'http://example.com/a/b').must_equal 3
 
-      URLMask.match(
+      FuzzyURL.match(
         'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag',
         'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag'
       ).must_equal 9
 
-      URLMask.match('*.example.com:80', 'api.example.com').must_equal nil
-      URLMask.match('*.example.com:80', 'api.example.com:80').must_equal 1
+      FuzzyURL.match('*.example.com:80', 'api.example.com').must_equal nil
+      FuzzyURL.match('*.example.com:80', 'api.example.com:80').must_equal 1
     end
   end
 
   describe '#to_hash' do
     it 'hands off processing to .url_to_hash' do
-      URLMask.expects(:url_to_hash).with('test').returns({})
-      m = URLMask.new('test')
+      FuzzyURL.expects(:url_to_hash).with('test').returns({})
+      m = FuzzyURL.new('test')
       m.to_hash
     end
 
     it 'memoizes' do
-      URLMask.expects(:url_to_hash).with('test').returns({})
-      m = URLMask.new('test')
+      FuzzyURL.expects(:url_to_hash).with('test').returns({})
+      m = FuzzyURL.new('test')
       m.to_hash
       m.to_hash
     end
@@ -156,12 +156,12 @@ describe URLMask do
 
   describe '.url_to_hash' do
     it 'handles bad input' do
-      d = URLMask.url_to_hash('this is clearly crap')
+      d = FuzzyURL.url_to_hash('this is clearly crap')
       d.must_be_nil
     end
 
     it 'handles *' do
-      d = URLMask.url_to_hash('*')
+      d = FuzzyURL.url_to_hash('*')
       d[:protocol].must_be_nil
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -173,7 +173,7 @@ describe URLMask do
     end
 
     it 'handles example.com' do
-      d = URLMask.url_to_hash('example.com')
+      d = FuzzyURL.url_to_hash('example.com')
       d[:protocol].must_be_nil
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -185,7 +185,7 @@ describe URLMask do
     end
 
     it 'handles http://example.com' do
-      d = URLMask.url_to_hash('http://example.com')
+      d = FuzzyURL.url_to_hash('http://example.com')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -197,7 +197,7 @@ describe URLMask do
     end
 
     it 'handles http://*' do
-      d = URLMask.url_to_hash('http://*')
+      d = FuzzyURL.url_to_hash('http://*')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -209,7 +209,7 @@ describe URLMask do
     end
 
     it 'handles example.com:80' do
-      d = URLMask.url_to_hash('example.com:80')
+      d = FuzzyURL.url_to_hash('example.com:80')
       d[:protocol].must_be_nil
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -221,7 +221,7 @@ describe URLMask do
     end
 
     it 'handles https://example.com/' do
-      d = URLMask.url_to_hash('https://example.com/')
+      d = FuzzyURL.url_to_hash('https://example.com/')
       d[:protocol].must_equal 'https'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -233,7 +233,7 @@ describe URLMask do
     end
 
     it 'handles http://example.com:12345' do
-      d = URLMask.url_to_hash('http://example.com:12345')
+      d = FuzzyURL.url_to_hash('http://example.com:12345')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -245,7 +245,7 @@ describe URLMask do
     end
 
     it 'handles http://user:pass@example.com' do
-      d = URLMask.url_to_hash('http://user:pass@example.com')
+      d = FuzzyURL.url_to_hash('http://user:pass@example.com')
       d[:protocol].must_equal 'http'
       d[:username].must_equal 'user'
       d[:password].must_equal 'pass'
@@ -257,7 +257,7 @@ describe URLMask do
     end
 
     it 'handles http://user:@example.com' do
-      d = URLMask.url_to_hash('http://user:@example.com')
+      d = FuzzyURL.url_to_hash('http://user:@example.com')
       d[:protocol].must_equal 'http'
       d[:username].must_equal 'user'
       d[:password].must_equal ''
@@ -269,7 +269,7 @@ describe URLMask do
     end
 
     it 'handles http://example.com/some/path?query=true' do
-      d = URLMask.url_to_hash('http://example.com/some/path%20lol?query=true')
+      d = FuzzyURL.url_to_hash('http://example.com/some/path%20lol?query=true')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -281,7 +281,7 @@ describe URLMask do
     end
 
     it 'handles https://example.com?query=true' do
-      d = URLMask.url_to_hash('https://example.com?query=true')
+      d = FuzzyURL.url_to_hash('https://example.com?query=true')
       d[:protocol].must_equal 'https'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -293,7 +293,7 @@ describe URLMask do
     end
 
     it 'handles HTTP://Example.COM/PATH#frag' do
-      d = URLMask.url_to_hash('HTTP://Example.COM/PATH#frag')
+      d = FuzzyURL.url_to_hash('HTTP://Example.COM/PATH#frag')
       d[:protocol].must_equal 'http'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -305,7 +305,7 @@ describe URLMask do
     end
 
     it 'handles file:///path/to/a/file' do
-      d = URLMask.url_to_hash('file:///path/to/a/file')
+      d = FuzzyURL.url_to_hash('file:///path/to/a/file')
       d[:protocol].must_equal 'file'
       d[:username].must_be_nil
       d[:password].must_be_nil
@@ -317,7 +317,7 @@ describe URLMask do
     end
 
     it 'handles http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag' do
-      d = URLMask.url_to_hash('http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag')
+      d = FuzzyURL.url_to_hash('http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag')
       d[:protocol].must_equal 'http'
       d[:username].must_equal 'user'
       d[:password].must_equal 'pass'

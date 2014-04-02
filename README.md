@@ -1,14 +1,14 @@
-# URLMask
+# FuzzyURL
 
 A Ruby Gem for non-strict URL parsing and matching.
 
-## What URLMask Does
+## What FuzzyURL Does
 
-URLMask provides two related functions: matching of a URL to a URL mask
+FuzzyURL provides two related functions: matching of a URL to a URL mask
 that can contain wildcards, and non-strict parsing of a URL into its
 component pieces.
 
-`URLMask.url_to_hash` and `URLMask#to_hash` parse into Hash format URLs
+`FuzzyURL.url_to_hash` and `FuzzyURL#to_hash` parse into Hash format URLs
 which look like the following:
  
 ```
@@ -17,7 +17,7 @@ which look like the following:
 
 Further, URL masks can be constructed using some or all of the above
 fields, replacing some or all of those fields with a `*` wildcard,
-either in string format or in hash format (through `URLMask.new`).
+either in string format or in hash format (through `FuzzyURL.new`).
 
 These URL masks can be compared to URLs to not only determine whether a
 yes-or-no match was reached (through `matches?`), but also provide a
@@ -26,12 +26,12 @@ specificity (through `match`).
 
 ## Usage
 
-URLMask has no external dependencies, and is usable in Ruby 1.8.7 or above:
+FuzzyURL has no external dependencies, and is usable in Ruby 1.8.7 or above:
 
 ```ruby
 require 'urlmask'
 
-mask = URLMask.new('*.example.com:80')
+mask = FuzzyURL.new('*.example.com:80')
 
 mask.matches?('http://www.example.com/index.html')  # => true
 mask.matches?('https://www.example.com')            # => false
@@ -47,12 +47,12 @@ mask.to_hash
 
 ## Documentation
 
-For more information, see the class documentation for URLMask.
+For more information, see the class documentation for FuzzyURL.
 
 ## Authorship and License
 
-URLMask is copyright 2014, Pete Gamache,
+FuzzyURL is copyright 2014, Pete Gamache,
 [mailto:pete@gamache.org](pete@gamache.org).
 
-URLMask is released under the MIT license.  See LICENSE.txt.
+FuzzyURL is released under the MIT license.  See LICENSE.txt.
 

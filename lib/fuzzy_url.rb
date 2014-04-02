@@ -1,21 +1,21 @@
-require 'url_mask/version'
+require 'fuzzy_url/version'
 require 'pp'
 
-## URLMask is a class for representing a URL mask with wildcards, and for
+## FuzzyURL is a class for representing a URL mask with wildcards, and for
 ## matching other URLs against that URL mask.  It also contains facilities
 ## for non-strict parsing of common URLs.
 ##
 ## Example usage:
 ##
 ## ```
-## mask = URLMask.new('http://example.com/*')
+## mask = FuzzyURL.new('http://example.com/*')
 ## mask.matches?('http://example.com')        # => true
 ## mask.matches?('http://example.com/a/b/c')  # => true
 ## mask.matches?('https://example.com')       # => false
 ## mask.matches?('http://foobar.com')         # => false
 ## ```
 ##
-## It is important to note that URLMask is not a URL validator!  It performs
+## It is important to note that FuzzyURL is not a URL validator!  It performs
 ## lenient matching of URLs and URL masks like the following:
 ##
 ## ```
@@ -34,9 +34,9 @@ require 'pp'
 ## "/a/b/*") in order to match paths like "/a/b" and "/a/b/c/d", but not
 ## "/a/bcde".
 
-class URLMask < Hash
+class FuzzyURL < Hash
 
-  ## Creates a new URLMask with the given mask URL string or hash.
+  ## Creates a new FuzzyURL with the given mask URL string or hash.
   ## If hash, it should contain :protocol, :username, :password,
   ## :hostname, :port, :path, :query, and :fragment fields (all String
   ## or nil).
@@ -56,32 +56,32 @@ class URLMask < Hash
     end
   end
 
-  ## Matches the given URL string against this URLMask.
+  ## Matches the given URL string against this FuzzyURL.
   ## Returns nil on negative match, and an integer match score otherwise.
   ## This match score is higher for more specific matches.
   def match(url)
     self.class.match_hash(self.to_hash, self.class.url_to_hash(url))
   end
 
-  ## Matches the given URL string against this URLMask.
+  ## Matches the given URL string against this FuzzyURL.
   ## Returns true on positive match, false otherwise.
   def matches?(url)
     match(url) ? true : false
   end
 
-  ## Returns this URLMask's hash form.
+  ## Returns this FuzzyURL's hash form.
   def to_hash
     Hash[self]
   end
 
-  ## Returns this URLMask's string form.
+  ## Returns this FuzzyURL's string form.
   def to_s
     @string ? @string.clone : ''
   end
 
   # @private
   def inspect
-    "#<URLMask object_id=#{object_id} @string=#{@string.inspect} #{super}>"
+    "#<FuzzyURL object_id=#{object_id} @string=#{@string.inspect} #{super}>"
   end
 
 
@@ -97,7 +97,7 @@ class URLMask < Hash
     ## Example:
     ##
     ## ```
-    ## URLMask.url_to_hash('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
+    ## FuzzyURL.url_to_hash('http://user:pass@example.com:8080/some/path/?foo=bar&baz=1#url-fragment')
     ## # => {:protocol=>"http", :username=>"user", :password=>"pass", :hostname=>"example.com", :port=>8080, :path=>"/some/path/", :query=>"foo=bar&baz=1", :fragment=>"url-fragment"} 
     ## ```
 

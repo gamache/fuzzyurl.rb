@@ -1,18 +1,18 @@
 require './lib/url_mask/version'
 
 Gem::Specification.new do |s|
-  s.name     = 'urlmask'
-  s.version  = URLMask::VERSION
-  s.date     = URLMask::VERSION_DATE
+  s.name     = 'fuzzyurl'
+  s.version  = FuzzyURL::VERSION
+  s.date     = FuzzyURL::VERSION_DATE
 
-  s.summary  = 'Non-strict URL parsing and wildcard matching.'
+  s.summary  = 'Non-strict URL parsing and URL fuzzy matching.'
   s.description = <<-EOT
-    URLMask provides two related functions: matching of a URL to a URL mask
-    that can contain wildcards, and non-strict parsing of URLs into their
+    FuzzyURL provides two related functions: fuzzy matching of a URL to a URL
+    mask that can contain wildcards, and non-strict parsing of URLs into their
     component pieces: protocol, username, password, hostname, port, path,
     query, and fragment.
   EOT
-  s.homepage = 'https://github.com/gamache/urlmask'
+  s.homepage = 'https://github.com/gamache/fuzzyurl'
   s.authors  = ['Pete Gamache']
   s.email    = 'pete@gamache.org'
 
