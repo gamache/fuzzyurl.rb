@@ -38,6 +38,8 @@ MATCHES = <<-EOT.split(/\s+/)
 
   user:pass@host        http://user:pass@host/some/path?q=1
 
+  *.example.com:80      http://www.example.com/index.html
+  example.com:443       https://example.com/
 
 EOT
 
@@ -55,7 +57,6 @@ NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
 
   example.com:888       example.com:8888
   https://example.com   example.com:443
-  example.com:443       https://example.com/
 
   user:pass@host        http://user:@host/some/path?q=1
   user:pass@host        http://user@host/some/path?q=1
@@ -113,24 +114,6 @@ describe FuzzyURL do
       FuzzyURL.expects(:match_hash).returns(true)
       FuzzyURL.match('*', '*')
     end
-
-    it 'handles positive matches' do
-      i = 0
-      while i < MATCHES.count-1
-        mask = MATCHES[i+=1]
-        url = MATCHES[i+=1]
-        FuzzyURL.matches?(mask, url).must_equal true, "#{mask} vs #{url}"
-      end
-    end
-
-    it 'handles negative matches' do
-      i = 0
-      while i < NEGATIVE_MATCHES.count-1
-        mask = NEGATIVE_MATCHES[i+=1]
-        url = NEGATIVE_MATCHES[i+=1]
-        FuzzyURL.matches?(mask, url).must_equal false, "#{mask} vs #{url}"
-      end
-    end
   end
 
   describe '#matches?' do
@@ -176,9 +159,9 @@ describe FuzzyURL do
       FuzzyURL.match(
         'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag',
         'http://user:pass@example.com:12345/some/path?query=true&foo=bar#frag'
-      ).must_equal 9
+      ).must_equal 8
 
-      FuzzyURL.match('*.example.com:80', 'api.example.com').must_equal nil
+      FuzzyURL.match('*.example.com:80', 'api.example.com').must_equal 0
       FuzzyURL.match('*.example.com:80', 'api.example.com:80').must_equal 1
     end
   end

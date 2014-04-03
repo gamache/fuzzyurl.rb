@@ -19,7 +19,6 @@ class FuzzyURL
         tally.call match_hostnames(mask[:hostname], url[:hostname])
         tally.call match_protocols_and_ports(mask, url)
         tally.call match_paths(mask[:path], url[:path])
-        tally.call fuzzy_match(mask[:port], url[:port])
         tally.call fuzzy_match(mask[:query], url[:query])
         tally.call fuzzy_match(mask[:username], url[:username])
         tally.call fuzzy_match(mask[:password], url[:password])
@@ -48,15 +47,17 @@ class FuzzyURL
         end
 
         mask_port = mask_hash[:port]
-        url_port = url_hash[:port]
-        if mask_hash[:port] && mask_port != '*'
-          if mask_port == PORT_BY_PROTOCOL[url_protocol]
-            wildcard_matches += 1
-          else
-            return nil if mask_port != url_port
-          end
-        else
+        url_port = url_hash[:port] # || PORT_BY_PROTOCOL[url_protocol]
+
+        if !mask_port || mask_port == '*'
           wildcard_matches += 1
+        elsif !url_port && PORT_BY_PROTOCOL[url_protocol] == mask_port.to_i
+          wildcard_matches += 1
+        elsif mask_port == url_port
+          ## cool
+        else
+          ## not cool
+          return nil
         end
 
         (2 - wildcard_matches)
@@ -65,7 +66,6 @@ class FuzzyURL
       PORT_BY_PROTOCOL = {
         'http'  => 80,
         'https' => 443,
-        'file'  => nil,
       }
 
       ## Matches a picee of a mask against a piece of a URL.  Handles wildcards.
@@ -92,6 +92,8 @@ class FuzzyURL
       ## Returns nil for no match, 0 for a wildcard match, or 1 for an
       ## exact match.
       def match_paths(mask, path)
+        mask = '/'+mask if mask && mask.index('/') != 0
+        path = '/'+path if path && path.index('/') != 0
         mask_pieces = (mask || '*').split(%r{/})
         path_pieces = (path || '/').split(%r{/})
         return 1 if mask && path && mask_pieces==path_pieces
