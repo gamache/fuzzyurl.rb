@@ -1,4 +1,4 @@
-# FuzzyURL
+# FuzzyURL [![Build Status](https://travis-ci.org/gamache/fuzzyurl.png?branch=master)](https://travis-ci.org/gamache/fuzzyurl)
 
 A Ruby Gem for non-strict URL parsing, manipulation, and fuzzy matching.
 
