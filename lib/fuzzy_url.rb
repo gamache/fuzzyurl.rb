@@ -1,4 +1,5 @@
 require 'fuzzy_url/version'
+require 'fuzzy_url/url_components'
 require 'pp'
 
 ## FuzzyURL is a class for representing a URL mask with wildcards, and for
@@ -34,7 +35,10 @@ require 'pp'
 ## "/a/b/*") in order to match paths like "/a/b" and "/a/b/c/d", but not
 ## "/a/bcde".
 
-class FuzzyURL < Hash
+class FuzzyURL
+  include FuzzyURL::URLComponents
+
+
 
   ## Creates a new FuzzyURL with the given mask URL string or hash.
   ## If hash, it should contain :protocol, :username, :password,
@@ -46,11 +50,9 @@ class FuzzyURL < Hash
       unless hash = self.class.url_to_hash(mask)
         raise ArgumentError, "Bad mask URL: #{mask.inspect}"
       end
-      initialize_copy(hash)
-      @string = mask
-    when Hash
-      initialize_copy(mask)
-      @string = self.class.hash_to_url(mask)
+      @components = Hash[hash]
+    when Hash, FuzzyURL
+      @components = Hash[mask.to_hash]
     else
       raise ArgumentError, "mask must be a String or a Hash; got #{mask.inspect}"
     end
@@ -71,17 +73,12 @@ class FuzzyURL < Hash
 
   ## Returns this FuzzyURL's hash form.
   def to_hash
-    Hash[self]
+    Hash[@components]
   end
 
   ## Returns this FuzzyURL's string form.
   def to_s
-    @string ? @string.clone : ''
-  end
-
-  # @private
-  def inspect
-    "#<FuzzyURL object_id=#{object_id} @string=#{@string.inspect} #{super}>"
+    self.class.hash_to_url(@components)
   end
 
 
@@ -161,7 +158,7 @@ class FuzzyURL < Hash
         url << '@'
       end
       url << hash[:hostname] if hash[:hostname]
-      url << ':'+hash[:port] if hash[:port]
+      url << ':'+hash[:port].to_s if hash[:port]
 
       ## make sure path starts with a / if it's defined
       path = hash[:path]

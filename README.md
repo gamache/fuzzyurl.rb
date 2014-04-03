@@ -14,7 +14,7 @@ URL-like strings into their component pieces (protocol, username, password,
 hostname, port, path, query, and fragment), and fuzzy matching of URLs
 and URL patterns.
 
-FuzzyURL can decompose URLs that look like the following:
+FuzzyURL can work with URLs that look like the following:
 
 ```
 [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
@@ -29,35 +29,63 @@ In addition, hostnames can use `*` as their first label (e.g.,
 "\*.example.com"), and paths can use `*` after the last path separator
 (`/`) in the path (e.g., "/some/path/\*").
 
+
 ```ruby
 require 'fuzzyurl'
 
-fu = FuzzyURL.new('*.example.com:80')
-fu = FuzzyURL.new(hostname: '*.example.com', port: 80)  ## same thing
+fuzzy_url = FuzzyURL.new('*.example.com:80')
+fuzzy_url = FuzzyURL.new(hostname: '*.example.com', port: 80)  ## same thing
+fuzzy_url = FuzzyURL.new(FuzzyURL.new('*.example.com:80'))     ## also works
 ```
 
-A FuzzyURL can be compared to URLs to not only determine whether a
-yes-or-no match was reached (through `matches?`):
 
-```ruby
-fu.matches?('http://www.example.com/index.html')  # => true
-fu.matches?('https://www.example.com')            # => false
-fu.matches?('http://www.example.com:8080')        # => false
-fu.matches?('www.us.example.com')                 # => true
-fu.matches?('example.com')                        # => false
-```
+### Matching
 
-...but also to provide a
-numeric match score by which multiple URL masks can be sorted for
-specificity (through `match`).
+A FuzzyURL can be compared with a given URL or URL-like string, subject
+to the same rules as above, to provide a boolean result with
+`#matches?`:
 
 
 ```ruby
+fuzzy_url.matches?('http://www.example.com/index.html')  # => true
+fuzzy_url.matches?('https://www.example.com')            # => false
+fuzzy_url.matches?('http://www.example.com:8080')        # => false
+fuzzy_url.matches?('www.us.example.com')                 # => true
+fuzzy_url.matches?('example.com')                        # => false
+```
 
-mask.to_hash
-# => {:protocol=>nil, :username=>nil, :password=>nil,
-#     :hostname=>"*.example.com", :port=>80, :path=>nil, 
-#     :query=>nil, :fragment=>nil}
+FuzzyURL also provides relative matching functionality through `#match`,
+which returns nil (no match) or an integer representing relative match
+quality, higher being more specific.  In this way, several FuzzyURLs may
+be ranked in terms of specificity to a given URL: 
+
+```ruby
+fuzzy_urls = ['example.com', 'http://example.com', 'example.com/index.html',
+              '*', 'example.com/index.html#foo', 'badmatch.example.com',
+              'api.xyz.org'].map {|url| FuzzyURL.new(url)}
+url = 'http://example.com:8080/index.html#foo'
+matches = fuzzy_urls.select {|fu| fu.matches?(url)}
+
+matches.sort_by {|fu| -fu.match(url)}.map(&:to_s)
+# => ["example.com/index.html#foo", "http://example.com", 
+#     "example.com/index.html", "example.com", "*"] 
+
+```
+
+### Parsing
+
+FuzzyURLs allow back-and-forth composition and decomposition of URLs or
+URL-like patterns.  Create a FuzzyURL object from a string, a hash, or
+another FuzzyURL.  Then you can edit any component of the URL with ease:
+
+```ruby
+fuzzy_url = FuzzyURL.new('*')
+fuzzy_url.protocol = 'http'
+fuzzy_url['path'] = '/index.html'
+fuzzy_url[:hostname] = 'example.com'
+fuzzy_url.to_s
+fuzzy_url.to_hash
+
 ```
 
 ## Documentation
