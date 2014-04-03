@@ -1,18 +1,15 @@
 # FuzzyURL
 
-A Ruby Gem for non-strict URL parsing and URL fuzzy matching.
+A Ruby Gem for non-strict URL parsing, manipulation, and fuzzy matching.
 
 ## About FuzzyURL
-
-FuzzyURL provides two related functions: fuzzy matching of a URL to a URL
-mask that can contain wildcards, and non-strict parsing of URLs into their
-component pieces: protocol, username, password, hostname, port, path,
-query, and fragment.
 
 FuzzyURL provides two related functions: non-strict parsing of URLs or
 URL-like strings into their component pieces (protocol, username, password,
 hostname, port, path, query, and fragment), and fuzzy matching of URLs
 and URL patterns.
+
+## Usage
 
 FuzzyURL can work with URLs that look like the following:
 
@@ -20,14 +17,12 @@ FuzzyURL can work with URLs that look like the following:
 [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
 ```
 
-## Usage
-
 FuzzyURLs can be constructed using some or all of the above
 fields, replacing some or all of those fields with a `*` wildcard,
 either in string format or in hash format (through `FuzzyURL.new`).
 In addition, hostnames can use `*` as their first label (e.g., 
 "\*.example.com"), and paths can use `*` after the last path separator
-(`/`) in the path (e.g., "/some/path/\*").
+(`/`) in the given path (e.g., "/some/path/\*").
 
 
 ```ruby
@@ -36,6 +31,10 @@ require 'fuzzyurl'
 fuzzy_url = FuzzyURL.new('*.example.com:80')
 fuzzy_url = FuzzyURL.new(hostname: '*.example.com', port: 80)  ## same thing
 fuzzy_url = FuzzyURL.new(FuzzyURL.new('*.example.com:80'))     ## also works
+
+fuzzy_url.to_hash
+# => {:protocol=>nil, :username=>nil, :password=>nil, :hostname=>"*.example.com",
+#     :port=>80, :path=>nil, :query=>nil, :fragment=>nil}
 ```
 
 
@@ -61,8 +60,8 @@ be ranked in terms of specificity to a given URL:
 
 ```ruby
 fuzzy_urls = ['example.com', 'http://example.com', 'example.com/index.html',
-              '*', 'example.com/index.html#foo', 'badmatch.example.com',
-              'api.xyz.org'].map {|url| FuzzyURL.new(url)}
+              '*', 'example.com/index.html#foo', 'badmatch.example.com'
+             ].map {|url| FuzzyURL.new(url)}
 url = 'http://example.com:8080/index.html#foo'
 matches = fuzzy_urls.select {|fu| fu.matches?(url)}
 
@@ -72,19 +71,19 @@ matches.sort_by {|fu| -fu.match(url)}.map(&:to_s)
 
 ```
 
-### Parsing
+### Parsing and Manipulation
 
 FuzzyURLs allow back-and-forth composition and decomposition of URLs or
 URL-like patterns.  Create a FuzzyURL object from a string, a hash, or
 another FuzzyURL.  Then you can edit any component of the URL with ease:
 
 ```ruby
-fuzzy_url = FuzzyURL.new('*')
+fuzzy_url = FuzzyURL.new
 fuzzy_url.protocol = 'http'
-fuzzy_url['path'] = '/index.html'
 fuzzy_url[:hostname] = 'example.com'
-fuzzy_url.to_s
-fuzzy_url.to_hash
+fuzzy_url['path'] = '/index.html'
+
+fuzzy_url.to_s  # => "http://example.com/index.html" 
 
 ```
 

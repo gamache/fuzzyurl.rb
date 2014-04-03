@@ -64,6 +64,50 @@ EOT
 
 describe FuzzyURL do
 
+  describe '#initialize' do
+    it 'can create from strings' do
+      fu = FuzzyURL.new('http://user:pass@example.com:12345/some/path%20test'+
+                        '?query=true&foo=bar#frag')
+      fu.protocol.must_equal 'http'
+      fu.username.must_equal 'user'
+      fu.password.must_equal 'pass'
+      fu.hostname.must_equal 'example.com'
+      fu.port.must_equal 12345
+      fu.path.must_equal '/some/path%20test'
+      fu.query.must_equal 'query=true&foo=bar'
+      fu.fragment.must_equal 'frag'
+    end
+
+    it 'can create from hash' do
+      fu = FuzzyURL.new(:protocol=>"http",            :username=>"user",
+                        :password=>"pass",            :hostname=>"example.com",
+                        :path=>"/some/path%20test",   :port=>12345,
+                        :query=>"query=true&foo=bar", :fragment=>"frag")
+      fu.protocol.must_equal 'http'
+      fu.username.must_equal 'user'
+      fu.password.must_equal 'pass'
+      fu.hostname.must_equal 'example.com'
+      fu.port.must_equal 12345
+      fu.path.must_equal '/some/path%20test'
+      fu.query.must_equal 'query=true&foo=bar'
+      fu.fragment.must_equal 'frag'
+    end
+
+    it 'can create from another FuzzyURL' do
+      fu0 = FuzzyURL.new('http://user:pass@example.com:12345/some/path%20test'+
+                         '?query=true&foo=bar#frag')
+      fu = FuzzyURL.new(fu0)
+      fu.protocol.must_equal 'http'
+      fu.username.must_equal 'user'
+      fu.password.must_equal 'pass'
+      fu.hostname.must_equal 'example.com'
+      fu.port.must_equal 12345
+      fu.path.must_equal '/some/path%20test'
+      fu.query.must_equal 'query=true&foo=bar'
+      fu.fragment.must_equal 'frag'
+    end
+  end
+
   describe '.matches?' do
     it 'passes control to .match_hash' do
       FuzzyURL.expects(:match_hash).returns(true)

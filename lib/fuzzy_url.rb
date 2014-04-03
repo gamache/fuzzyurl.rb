@@ -2,59 +2,62 @@ require 'fuzzy_url/version'
 require 'fuzzy_url/url_components'
 require 'pp'
 
-## FuzzyURL is a class for representing a URL mask with wildcards, and for
-## matching other URLs against that URL mask.  It also contains facilities
-## for non-strict parsing of common URLs.
+## FuzzyURL is a class to represent URLs and URL-like things.  FuzzyURL aids
+## in the manipulation and matching of URLs by providing non-strict parsing,
+## wildcard matching, ranked matching, `#to_s`, and more.
 ##
 ## Example usage:
 ##
 ## ```
-## mask = FuzzyURL.new('http://example.com/*')
-## mask.matches?('http://example.com')        # => true
-## mask.matches?('http://example.com/a/b/c')  # => true
-## mask.matches?('https://example.com')       # => false
-## mask.matches?('http://foobar.com')         # => false
+## require 'fuzzyurl'
+## fuzzy_url = FuzzyURL.new('http://example.com/*')
+## fuzzy_url.matches?('http://example.com')        # => true
+## fuzzy_url.matches?('http://example.com/a/b/c')  # => true
+## fuzzy_url.matches?('https://example.com')       # => false
+## fuzzy_url.matches?('http://foobar.com')         # => false
 ## ```
 ##
 ## It is important to note that FuzzyURL is not a URL validator!  It performs
-## lenient matching of URLs and URL masks like the following:
+## lenient matching of URLs and URL-like things that look like the following:
 ##
 ## ```
 ## [protocol ://] [username [: password] @] [hostname] [: port] [/ path] [? query] [# fragment]
 ## ```
 ##
-## In a URL mask, any part of the above may be replaced with a `*` character
+## In a FuzzyURL, any part of the above may be replaced with a `*` character
 ## to match anything.
 ##
-## In a hostname, the most specific segment of the host (e.g., the "xyz"
-## in "xyz.us.example.com") may be replaced with a `*` character
-## (e.g., "*.us.example.com") in order to match domains like
-## "xxx.us.example.com" and "yyy.zzz.us.example.com", but not "us.example.com".
+## In a hostname, the leftmost label of the host (e.g., the `xyz`
+## in `xyz.us.example.com`) may be replaced with a `*` character
+## (e.g., `*.us.example.com`) in order to match domains like
+## `xxx.us.example.com` and `yyy.zzz.us.example.com`, but not `us.example.com`.
 ##
-## In a path, a `*` character may be placed after a `/` character (e.g.,
-## "/a/b/*") in order to match paths like "/a/b" and "/a/b/c/d", but not
-## "/a/bcde".
+## In a path, a `*` character may be placed after the last `/` path separator 
+## (e.g., `/a/b/*`) in order to match paths like `/a/b` and `/a/b/c/d`,
+## but not `/a/bcde`.
 
 class FuzzyURL
   include FuzzyURL::URLComponents
 
-
-
-  ## Creates a new FuzzyURL with the given mask URL string or hash.
-  ## If hash, it should contain :protocol, :username, :password,
-  ## :hostname, :port, :path, :query, and :fragment fields (all String
-  ## or nil).
-  def initialize(mask)
-    case mask
+  ## Creates a new FuzzyURL with the given URL or URL-like object of type
+  ## String, Hash, or FuzzyURL.
+  ## Acceptable hash keys are :protocol, :username, :password, :hostname,
+  ## :port, :path, :query, and :fragment.  Hash keys other than these are
+  ## ignored.
+  def initialize(url='')
+    default_components = {:protocol=>nil, :username=>nil, :password=>nil,
+                          :hostname=>nil, :port=>nil, :path=>nil,
+                          :query=>nil, :fragment=>nil}
+    case url
     when String
-      unless hash = self.class.url_to_hash(mask)
-        raise ArgumentError, "Bad mask URL: #{mask.inspect}"
+      unless hash = self.class.url_to_hash(url)
+        raise ArgumentError, "Bad url URL: #{url.inspect}"
       end
-      @components = Hash[hash]
+      @components = default_components.merge(hash)
     when Hash, FuzzyURL
-      @components = Hash[mask.to_hash]
+      @components = default_components.merge(url.to_hash)
     else
-      raise ArgumentError, "mask must be a String or a Hash; got #{mask.inspect}"
+      raise ArgumentError, "url must be a String, Hash, or FuzzyURL; got #{url.inspect}"
     end
   end
 
@@ -151,22 +154,22 @@ class FuzzyURL
     ## or nil), return a URL string containing these elements.
     def hash_to_url(hash)
       url = ''
-      url << hash[:protocol]+'://' if hash[:protocol]
+      url << "#{ hash[:protocol] }://" if hash[:protocol]
       if hash[:username]
-        url << hash[:username]
-        url << ':'+hash[:password] if hash[:password]
+        url << "#{hash[:username]}"
+        url << ":#{hash[:password]}" if hash[:password]
         url << '@'
       end
-      url << hash[:hostname] if hash[:hostname]
-      url << ':'+hash[:port].to_s if hash[:port]
+      url << "#{hash[:hostname]}" if hash[:hostname]
+      url << ":#{hash[:port]}" if hash[:port]
 
       ## make sure path starts with a / if it's defined
       path = hash[:path]
-      path = '/'+path if path && path.index('/') != 0
-      url << path.to_s
+      path = "/#{path}" if path && path.index('/') != 0
+      url << "#{path}"
 
-      url << '?'+hash[:query] if hash[:query]
-      url << '#'+hash[:fragment] if hash[:fragment]
+      url << "?#{hash[:query]}" if hash[:query]
+      url << "##{hash[:fragment]}" if hash[:fragment]
       url
     end
 
