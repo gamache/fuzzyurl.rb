@@ -1,6 +1,6 @@
 # @private
 class FuzzyURL
-  VERSION = '0.1.0'
-  VERSION_DATE = '2014-04-02'
+  VERSION = '0.2.0'
+  VERSION_DATE = '2014-04-03'
 end
 
