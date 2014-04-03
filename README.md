@@ -89,12 +89,14 @@ fuzzy_url.to_s  # => "http://example.com/index.html"
 
 ## Documentation
 
-For more information, see the class documentation for FuzzyURL.
+For more information, see the [class documentation for FuzzyURL](http://rubydoc.info/gems/fuzzyurl/FuzzyURL).
 
 ## Authorship and License
 
 FuzzyURL is copyright 2014, Pete Gamache,
-[mailto:pete@gamache.org](pete@gamache.org).
+[pete@gamache.org](mailto:pete@gamache.org).
 
 FuzzyURL is released under the MIT license.  See LICENSE.txt.
 
+If you got this far, you should probably follow me on Twitter.
+[@gamache](https://twitter.com/gamache)
