@@ -115,23 +115,23 @@ class FuzzyURL
       if m = url.match(%r{
             ^
 
-            (?: (\* | [a-zA-Z]+) ://)?             ## m[1] is protocol
+            (?: (\* | [a-zA-Z][A-Za-z+.-]+) ://)?    ## m[1] is protocol
 
-            (?: (\* | [a-zA-Z0-9_]+)                ## m[2] is username
-                (?: : (\* | [a-zA-Z0-9_]*))?        ## m[3] is password
+            (?: (\* | [a-zA-Z0-9%_.!~*'();&=+$,-]+)                 ## m[2] is username
+                (?: : (\* | [a-zA-Z0-9%_.!~*'();&=+$,-]*))?         ## m[3] is password
                 @
             )?
 
-            ([a-zA-Z0-9\.\*\-]+?)?                 ## m[4] is hostname
+            ([a-zA-Z0-9\.\*\-]+?)?                   ## m[4] is hostname
 
-            (?: : (\* | \d+))?                     ## m[5] is port
+            (?: : (\* | \d+))?                       ## m[5] is port
 
-            (/ [^\?\#]*)?                          ## m[6] is path
-                                                   ## captures leading /
+            (/ [^\?\#]*)?                            ## m[6] is path
+                                                     ## captures leading /
 
-            (?: \? ([^\#]*) )?                     ## m[7] is query
+            (?: \? ([^\#]*) )?                       ## m[7] is query
 
-            (?: \# (.*) )?                         ## m[8] is fragment
+            (?: \# (.*) )?                           ## m[8] is fragment
 
             $
           }x)

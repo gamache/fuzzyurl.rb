@@ -41,6 +41,9 @@ MATCHES = <<-EOT.split(/\s+/)
   *.example.com:80      http://www.example.com/index.html
   example.com:443       https://example.com/
 
+  svn+ssh://user@example.com   svn+ssh://user:pass@example.com/some/path
+
+
 EOT
 
 NEGATIVE_MATCHES = <<-EOT.split(/\s+/)
@@ -354,6 +357,19 @@ describe FuzzyURL do
       d[:query].must_equal 'query=true&foo=bar'
       d[:fragment].must_equal 'frag'
     end
+
+    it 'handles some_g0d_*wful.username!!:p&ssw=rd+@example.com' do
+      d = FuzzyURL.url_to_hash('some_g0d_*wful.username!!:p&ssw=rd+@example.com')
+      d[:protocol].must_be_nil
+      d[:username].must_equal 'some_g0d_*wful.username!!'
+      d[:password].must_equal 'p&ssw=rd+'
+      d[:hostname].must_equal 'example.com'
+      d[:port].must_be_nil
+      d[:path].must_be_nil
+      d[:query].must_be_nil
+      d[:fragment].must_be_nil
+    end
+
   end
 
 end
