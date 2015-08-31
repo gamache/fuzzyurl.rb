@@ -140,7 +140,7 @@ class FuzzyURL
         username = m[2]
         password = m[3]
         hostname = m[4] ? m[4].downcase : nil
-        port     = m[5] ? m[5].to_i : nil
+        port     = m[5] ? (m[5] == '*' ? '*' : m[5].to_i) : nil
         path     = m[6]
         query    = m[7]
         fragment = m[8]

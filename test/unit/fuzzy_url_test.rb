@@ -110,6 +110,13 @@ describe FuzzyURL do
       fu.query.must_equal 'query=true&foo=bar'
       fu.fragment.must_equal 'frag'
     end
+
+    it 'create respect host *' do
+      fu0 = FuzzyURL.new('http://user:pass@example.com:*/some/path%20test'+
+                             '?query=true&foo=bar#frag')
+      fu = FuzzyURL.new(fu0)
+      fu.port.must_equal '*'
+    end
   end
 
   describe '.matches?' do
