@@ -23,6 +23,10 @@ wildcard if you wish to use the Fuzzyurl as a URL mask.
 
 ## Installation
 
+Put the following in your `Gemfile`:
+
+    gem 'fuzzyurl', '~> 0.8.0'
+
 
 ## Parsing URLs
 
