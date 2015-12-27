@@ -1,2 +1,0 @@
-require 'fuzzy_url'
-
