@@ -1,6 +1,7 @@
 # Fuzzyurl
 
 [![Build Status](https://travis-ci.org/gamache/fuzzyurl.rb.svg?branch=master)](https://travis-ci.org/gamache/fuzzyurl.rb)
+[![Coverage Status](https://coveralls.io/repos/gamache/fuzzyurl.rb/badge.svg?branch=master&service=github)](https://coveralls.io/github/gamache/fuzzyurl.rb?branch=master)
 
 Non-strict parsing, composition, and wildcard matching of URLs in
 Ruby.
