@@ -1,5 +1,5 @@
-Gemfile.lock
-*.gem
 doc/
-.yardoc
+js/
+ex/
+rb/
 
