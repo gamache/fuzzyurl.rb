@@ -17,10 +17,10 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 1.9.3'
 
-  s.add_development_dependency 'rake',      '>= 10.0.4'
-  s.add_development_dependency 'minitest',  '>= 4.7.0'
-  s.add_development_dependency 'mocha',     '>= 0.13.3'
+  s.add_development_dependency 'rake', '~> 10.0'
+  s.add_development_dependency 'minitest', '~> 4.7.0'
+  s.add_development_dependency 'mocha'
   s.add_development_dependency 'pry'
+  s.add_development_dependency 'coveralls'
 end
-
 
