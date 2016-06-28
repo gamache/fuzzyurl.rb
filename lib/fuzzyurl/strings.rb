@@ -8,7 +8,7 @@ class Fuzzyurl::Strings
         (?: : (?<password> \* | [a-zA-Z0-9%_.!~*'();&=+$,-]*))?
         @
     )?
-    (?<hostname> [a-zA-Z0-9\.\*\-]+?)?
+    (?<hostname> [a-zA-Z0-9\.\*\-_]+?)?
     (?: : (?<port> \* | \d+))?
     (?<path> / [^\?\#]*)?                 ## captures leading /
     (?: \? (?<query> [^\#]*) )?
