@@ -26,7 +26,7 @@ wildcard if you wish to use the Fuzzyurl as a URL mask.
 
 Put the following in your `Gemfile`:
 
-    gem 'fuzzyurl', '~> 0.8.0'
+    gem 'fuzzyurl', '~> 0.9.0'
 
 
 ## Parsing URLs

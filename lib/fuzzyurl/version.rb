@@ -1,5 +1,5 @@
 class Fuzzyurl
-  VERSION = "0.8.0"
-  VERSION_DATE = "2015-12-25"
+  VERSION = "0.9.0"
+  VERSION_DATE = "2016-06-28"
 end
 
