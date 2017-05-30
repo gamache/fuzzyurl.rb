@@ -1,13 +1,12 @@
 class Fuzzyurl
-  FIELDS = [
-    :protocol,
-    :username,
-    :password,
-    :hostname,
-    :port,
-    :path,
-    :query,
-    :fragment
-  ]
+  FIELDS = %i[
+    protocol
+    username
+    password
+    hostname
+    port
+    path
+    query
+    fragment
+  ].freeze
 end
-

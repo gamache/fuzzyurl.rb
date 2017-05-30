@@ -3,9 +3,9 @@ require 'test_helper'
 describe Fuzzyurl::Match do
   describe 'fuzzy_match' do
     it 'returns 0 for full wildcard' do
-      assert_equal(0, Fuzzyurl::Match.fuzzy_match("*", "lol"))
-      assert_equal(0, Fuzzyurl::Match.fuzzy_match("*", "*"))
-      assert_equal(0, Fuzzyurl::Match.fuzzy_match("*", nil))
+      assert_equal(0, Fuzzyurl::Match.fuzzy_match('*', 'lol'))
+      assert_equal(0, Fuzzyurl::Match.fuzzy_match('*', '*'))
+      assert_equal(0, Fuzzyurl::Match.fuzzy_match('*', nil))
     end
 
     it 'returns 1 for exact match' do
@@ -14,18 +14,23 @@ describe Fuzzyurl::Match do
 
     it 'handles *.example.com' do
       assert_equal(0, Fuzzyurl::Match.fuzzy_match(
-        '*.example.com', 'api.v1.example.com'))
+                        '*.example.com', 'api.v1.example.com'
+      ))
       assert_equal(nil, Fuzzyurl::Match.fuzzy_match(
-        '*.example.com', 'example.com'))
+                          '*.example.com', 'example.com'
+      ))
     end
 
     it 'handles **.example.com' do
       assert_equal(0, Fuzzyurl::Match.fuzzy_match(
-        '**.example.com', 'api.v1.example.com'))
+                        '**.example.com', 'api.v1.example.com'
+      ))
       assert_equal(0, Fuzzyurl::Match.fuzzy_match(
-        '**.example.com', 'example.com'))
+                        '**.example.com', 'example.com'
+      ))
       assert_equal(nil, Fuzzyurl::Match.fuzzy_match(
-        '**.example.com', 'zzzexample.com'))
+                          '**.example.com', 'zzzexample.com'
+      ))
     end
 
     it 'handles path/*' do
@@ -40,13 +45,13 @@ describe Fuzzyurl::Match do
     end
 
     it 'returns nil for bad matches with no wildcards' do
-      assert_equal(nil, Fuzzyurl::Match.fuzzy_match("asdf", "not quite"))
+      assert_equal(nil, Fuzzyurl::Match.fuzzy_match('asdf', 'not quite'))
     end
   end
 
   describe 'match' do
-    fu = Fuzzyurl.new(protocol: "a", username: "b", password: "c",
-      hostname: "d", port: "e", path: "f", query: "g")
+    fu = Fuzzyurl.new(protocol: 'a', username: 'b', password: 'c',
+                      hostname: 'd', port: 'e', path: 'f', query: 'g')
 
     it 'returns 0 for full wildcard' do
       assert_equal(0, Fuzzyurl::Match.match(Fuzzyurl.mask, Fuzzyurl.new))
@@ -57,7 +62,7 @@ describe Fuzzyurl::Match do
     end
 
     it 'returns 1 for one exact match' do
-      mask = Fuzzyurl.mask(protocol: "a")
+      mask = Fuzzyurl.mask(protocol: 'a')
       assert_equal(1, Fuzzyurl::Match.match(mask, fu))
     end
 
@@ -81,14 +86,17 @@ describe Fuzzyurl::Match do
   describe 'matches?' do
     it 'returns true for matches' do
       assert_equal(true, Fuzzyurl::Match.matches?(
-        Fuzzyurl.mask, Fuzzyurl.new))
+                           Fuzzyurl.mask, Fuzzyurl.new
+      ))
       assert_equal(true, Fuzzyurl::Match.matches?(
-        Fuzzyurl.mask(hostname: "yes"), Fuzzyurl.new(hostname: "yes")))
+                           Fuzzyurl.mask(hostname: 'yes'), Fuzzyurl.new(hostname: 'yes')
+      ))
     end
 
     it 'returns false for non-matches' do
       assert_equal(false, Fuzzyurl::Match.matches?(
-        Fuzzyurl.mask(hostname: "yes"), Fuzzyurl.new(hostname: "no")))
+                            Fuzzyurl.mask(hostname: 'yes'), Fuzzyurl.new(hostname: 'no')
+      ))
     end
   end
 
@@ -101,13 +109,12 @@ describe Fuzzyurl::Match do
 
   describe 'best_match_index' do
     it 'returns the index of the best match' do
-      best = Fuzzyurl.mask("example.com:8888")
-      no_match = Fuzzyurl.mask("example.com:80")
-      url = Fuzzyurl.from_string("http://example.com:8888")
+      best = Fuzzyurl.mask('example.com:8888')
+      no_match = Fuzzyurl.mask('example.com:80')
+      url = Fuzzyurl.from_string('http://example.com:8888')
       assert_equal(1, Fuzzyurl::Match.best_match_index(
-        [Fuzzyurl.mask, best, no_match], url))
+                        [Fuzzyurl.mask, best, no_match], url
+      ))
     end
   end
-
 end
-

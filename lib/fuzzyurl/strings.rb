@@ -17,40 +17,36 @@ class Fuzzyurl::Strings
   }x
 
   class << self
-
-    def from_string(str, opts={})
-      return nil unless str.kind_of?(String)
+    def from_string(str, opts = {})
+      return nil unless str.is_a?(String)
 
       default = opts[:default]
-      if m = REGEX.match(str)
-        fu = Fuzzyurl.new
-        Fuzzyurl::FIELDS.each do |f|
-          fu.send("#{f}=", m[f] || default)
-        end
-        fu
-      else
-        raise ArgumentError, "Couldn't parse url string: #{str}"
+      m = REGEX.match(str)
+      raise ArgumentError, "Couldn't parse url string: #{str}" unless m
+      fu = Fuzzyurl.new
+      Fuzzyurl::FIELDS.each do |f|
+        fu.send("#{f}=", m[f] || default)
       end
+      fu
     end
 
     def to_string(fuzzyurl)
-      if !fuzzyurl.kind_of?(Fuzzyurl)
-        raise ArgumentError, "`fuzzyurl` must be a Fuzzyurl"
+      unless fuzzyurl.is_a?(Fuzzyurl)
+        raise ArgumentError, '`fuzzyurl` must be a Fuzzyurl'
       end
 
       fu = fuzzyurl
-      str = ""
+      str = ''
       str << "#{fu.protocol}://" if fu.protocol
-      str << "#{fu.username}" if fu.username
+      str << fu.username.to_s if fu.username
       str << ":#{fu.password}" if fu.password
-      str << "@" if fu.username
-      str << "#{fu.hostname}" if fu.hostname
+      str << '@' if fu.username
+      str << fu.hostname.to_s if fu.hostname
       str << ":#{fu.port}" if fu.port
-      str << "#{fu.path}" if fu.path
+      str << fu.path.to_s if fu.path
       str << "?#{fu.query}" if fu.query
       str << "##{fu.fragment}" if fu.fragment
       str
     end
-
   end
 end

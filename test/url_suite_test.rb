@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'json'
 
-MATCHES = JSON.parse(File.read(File.expand_path("../matches.json", __FILE__)))
+MATCHES = JSON.parse(File.read(File.expand_path('../matches.json', __FILE__)))
 
 describe 'URL test suite' do
   describe 'positive matches' do
@@ -20,4 +20,3 @@ describe 'URL test suite' do
     end
   end
 end
-
