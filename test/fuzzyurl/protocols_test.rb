@@ -20,4 +20,3 @@ describe Fuzzyurl::Protocols do
     end
   end
 end
-

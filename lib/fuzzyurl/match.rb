@@ -2,7 +2,6 @@ require 'fuzzyurl/protocols'
 
 class Fuzzyurl::Match
   class << self
-
     # If `mask` (which may contain * wildcards) matches `url` (which may not),
     # returns an integer representing how closely they match (higher is closer).
     # If `mask` does not match `url`, returns null.
@@ -16,7 +15,6 @@ class Fuzzyurl::Match
       scores.values.reduce(:+)
     end
 
-
     # If `mask` (which may contain * wildcards) matches `url` (which may not),
     # returns true; otherwise returns false.
     #
@@ -26,7 +24,6 @@ class Fuzzyurl::Match
     def matches?(mask, url)
       match(mask, url) != nil
     end
-
 
     # Returns a Fuzzyurl-like object containing values representing how well
     # different parts of `mask` and `url` match.  Values are integers for
@@ -50,7 +47,6 @@ class Fuzzyurl::Match
       }
     end
 
-
     # From a list of Fuzzyurl `masks`, returns the index of the one which best
     # matches `url`.  Returns null if none of `masks` match.
     #
@@ -70,7 +66,6 @@ class Fuzzyurl::Match
       best_index
     end
 
-
     # If `mask` (which may contain * wildcards) matches `url` (which may not),
     # returns 1 if `mask` and `url` match perfectly, 0 if `mask` and `url`
     # are a wildcard match, or null otherwise.
@@ -89,17 +84,17 @@ class Fuzzyurl::Match
     # @param value [String] String value to match.
     # @returns [Integer|nil] 0 for wildcard match, 1 for perfect match, else nil.
     def fuzzy_match(mask, value)
-      return 0 if mask == "*"
+      return 0 if mask == '*'
       return 1 if mask == value
       return nil if !mask || !value
 
-      if mask.index("**.") == 0
+      if !mask.index('**.').nil? && mask.index('**.').zero?
         mask_value = mask[3..-1]
         return 0 if value.end_with?(".#{mask_value}")
         return 0 if mask_value == value
         return nil
       end
-      if mask.index("*") == 0
+      if !mask.index('*').nil? && mask.index('*').zero?
         return 0 if value.end_with?(mask[1..-1])
         return nil
       end
@@ -107,21 +102,19 @@ class Fuzzyurl::Match
       rev_mask = mask.reverse
       rev_value = value.reverse
 
-      if rev_mask.index("**/") == 0
+      if !rev_mask.index('**/').nil? && rev_mask.index('**/').zero?
         rev_mask_value = rev_mask[3..-1]
         return 0 if rev_value.end_with?("/#{rev_mask_value}")
         return 0 if rev_mask_value == rev_value
         return nil
       end
 
-      if rev_mask.index("*") == 0
+      if !rev_mask.index('*').nil? && rev_mask.index('*').zero?
         return 0 if rev_value.end_with?(rev_mask[1..-1])
         return nil
       end
 
       nil
     end
-
   end
 end
-

@@ -4,7 +4,6 @@ require 'fuzzyurl/protocols'
 require 'fuzzyurl/match'
 require 'fuzzyurl/strings'
 
-
 # Fuzzyurl provides two related functions: non-strict parsing of URLs or
 # URL-like strings into their component pieces (protocol, username, password,
 # hostname, port, path, query, and fragment), and fuzzy matching of URLs
@@ -80,17 +79,17 @@ require 'fuzzyurl/strings'
 #     #=> 1
 #
 class Fuzzyurl
-  FIELDS.each {|f| attr_accessor f}
+  FIELDS.each { |f| attr_accessor f }
 
   # Creates a new Fuzzyurl object from the given params or URL string.
   # Keys of `params` should be symbols.
   #
   # @param params [Hash|String|nil] URL string or parameter hash.
   # @return [Fuzzyurl] New Fuzzyurl object.
-  def initialize(params={})
-    p = params.kind_of?(String) ? Fuzzyurl.from_string(params).to_hash : params
+  def initialize(params = {})
+    p = params.is_a?(String) ? Fuzzyurl.from_string(params).to_hash : params
     (FIELDS & p.keys).each do |f|
-      self.send("#{f}=", p[f])
+      send("#{f}=", p[f])
     end
   end
 
@@ -99,11 +98,10 @@ class Fuzzyurl
   #
   # @return [Hash] Hash representation of this Fuzzyurl.
   def to_hash
-    FIELDS.reduce({}) do |hash, f|
-      val = self.send(f)
+    FIELDS.each_with_object({}) do |f, hash|
+      val = send(f)
       val = val.to_s if val
       hash[f] = val
-      hash
     end
   end
 
@@ -111,8 +109,8 @@ class Fuzzyurl
   #
   # @param params [Hash|nil] New parameter values.
   # @return [Fuzzyurl] Copy of `self` with the given parameters changed.
-  def with(params={})
-    fu = Fuzzyurl.new(self.to_hash)
+  def with(params = {})
+    fu = Fuzzyurl.new(to_hash)
     (FIELDS & params.keys).each do |f|
       fu.send("#{f}=", params[f].to_s)
     end
@@ -128,24 +126,22 @@ class Fuzzyurl
 
   # @private
   def ==(other)
-    self.to_hash == other.to_hash
+    to_hash == other.to_hash
   end
 
-
   class << self
-
     # Returns a Fuzzyurl suitable for use as a URL mask, with the given
     # values optionally set from `params` (Hash or String).
     #
     # @param params [Hash|String|nil] Parameters to set.
     # @return [Fuzzyurl] Fuzzyurl mask object.
-    def mask(params={})
+    def mask(params = {})
       params ||= {}
-      return from_string(params, default: "*") if params.kind_of?(String)
+      return from_string(params, default: '*') if params.is_a?(String)
 
       m = Fuzzyurl.new
       FIELDS.each do |f|
-        m.send("#{f}=", params.has_key?(f) ? params[f].to_s : "*")
+        m.send("#{f}=", params.key?(f) ? params[f].to_s : '*')
       end
       m
     end
@@ -165,7 +161,7 @@ class Fuzzyurl
     # @param str [String] String URL to convert to Fuzzyurl.
     # @param opts [Hash|nil] Options.
     # @return [Fuzzyurl] Fuzzyurl representation of `str`.
-    def from_string(str, opts={})
+    def from_string(str, opts = {})
       Fuzzyurl::Strings.from_string(str, opts)
     end
 
@@ -178,8 +174,8 @@ class Fuzzyurl
     # @param url [Fuzzyurl|String] URL.
     # @return [Integer|nil] 0 for wildcard match, 1 for perfect match, or nil.
     def match(mask, url)
-      m = mask.kind_of?(Fuzzyurl) ? mask : Fuzzyurl.mask(mask)
-      u = url.kind_of?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
+      m = mask.is_a?(Fuzzyurl) ? mask : Fuzzyurl.mask(mask)
+      u = url.is_a?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
       Fuzzyurl::Match.match(m, u)
     end
 
@@ -191,10 +187,8 @@ class Fuzzyurl
     # @param url [Fuzzyurl|String] URL.
     # @return [Boolean] Whether `mask` matches `url`.
     def matches?(mask, url)
-      m = mask.kind_of?(Fuzzyurl) ? m : Fuzzyurl.mask(m)
-      u = url.kind_of?(Fuzzyurl) ? u : Fuzzyurl.from_string(u)
-      m = mask.kind_of?(Fuzzyurl) ? mask : Fuzzyurl.mask(mask)
-      u = url.kind_of?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
+      m = mask.is_a?(Fuzzyurl) ? mask : Fuzzyurl.mask(mask)
+      u = url.is_a?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
       Fuzzyurl::Match.matches?(m, u)
     end
 
@@ -208,10 +202,8 @@ class Fuzzyurl
     # @param mask [Fuzzyurl|String] URL mask.
     # @param url [Fuzzyurl|String] URL.
     def match_scores(mask, url)
-      m = mask.kind_of?(Fuzzyurl) ? m : Fuzzyurl.mask(m)
-      u = url.kind_of?(Fuzzyurl) ? u : Fuzzyurl.from_string(u)
-      m = mask.kind_of?(Fuzzyurl) ? mask : Fuzzyurl.mask(mask)
-      u = url.kind_of?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
+      m = mask.is_a?(Fuzzyurl) ? mask : Fuzzyurl.mask(mask)
+      u = url.is_a?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
       Fuzzyurl::Match.match_scores(m, u)
     end
 
@@ -224,8 +216,8 @@ class Fuzzyurl
     # @param url [Fuzzyurl|String] URL.
     # @return [Integer|nil] Array index of best-matching mask, or nil for no match.
     def best_match_index(masks, url)
-      ms = masks.map {|m| m.kind_of?(Fuzzyurl) ? m : Fuzzyurl.mask(m)}
-      u = url.kind_of?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
+      ms = masks.map { |m| m.is_a?(Fuzzyurl) ? m : Fuzzyurl.mask(m) }
+      u = url.is_a?(Fuzzyurl) ? url : Fuzzyurl.from_string(url)
       Fuzzyurl::Match.best_match_index(ms, u)
     end
 
@@ -262,8 +254,5 @@ class Fuzzyurl
     def fuzzy_match(mask, value)
       Fuzzyurl::Match.fuzzy_match(mask, value)
     end
-
   end # class << self
-
 end
-

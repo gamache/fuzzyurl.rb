@@ -1,12 +1,15 @@
 require 'rake/testtask'
+require 'rubocop/rake_task'
 
-task :default => [:test]
+task default: %w[test rubocop]
+
+RuboCop::RakeTask.new
 
 Rake::TestTask.new do |t|
   t.libs << 'test'
   t.libs << 'test/lib'
   t.test_files = FileList['test/**/*_test.rb']
-  #t.warning = true
+  # t.warning = true
   t.verbose = true
 end
 
@@ -21,4 +24,3 @@ task :release do
     gem push fuzzyurl-#{Fuzzyurl::VERSION}.gem
   EOT
 end
-

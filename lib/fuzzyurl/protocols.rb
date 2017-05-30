@@ -3,13 +3,13 @@ class Fuzzyurl::Protocols
     'ssh' => '22',
     'http' => '80',
     'https' => '443'
-  }
+  }.freeze
 
   PROTOCOLS_BY_PORT = {
     '22' => 'ssh',
     '80' => 'http',
     '443' => 'https'
-  }
+  }.freeze
 
   class << self
     def get_port(protocol)
@@ -23,4 +23,3 @@ class Fuzzyurl::Protocols
     end
   end
 end
-
